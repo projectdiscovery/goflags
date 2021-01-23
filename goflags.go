@@ -9,6 +9,8 @@ import (
 	"text/tabwriter"
 
 	"github.com/cnf/structhash"
+	"github.com/pkg/errors"
+	"gopkg.in/yaml.v2"
 )
 
 // FlagSet is a list of flags for an application
@@ -51,10 +53,10 @@ func (f *FlagSet) Parse() error {
 	flag.CommandLine.Usage = f.usageFunc
 	flag.Parse()
 
-	if f.configFile != "" {
+	if f.configFile == "" {
 		return nil
 	}
-	return nil
+	return f.readConfigFile()
 }
 
 // readConfigFile reads the config file and returns any flags
@@ -62,6 +64,24 @@ func (f *FlagSet) Parse() error {
 //
 // Command line flags however always take prcedence over config file ones.
 func (f *FlagSet) readConfigFile() error {
+	file, err := os.Open(f.configFile)
+	if err != nil {
+		return errors.Wrap(err, "could not open config file")
+	}
+	defer file.Close()
+
+	data := make(map[string]string)
+	err = yaml.NewDecoder(file).Decode(&data)
+	if err != nil {
+		return errors.Wrap(err, "could not unmarshal config file")
+	}
+	flag.CommandLine.VisitAll(func(fl *flag.Flag) {
+		item, ok := data[fl.Name]
+		value := fl.Value.String()
+		if strings.EqualFold(fl.DefValue, value) && ok {
+			_ = fl.Value.Set(item)
+		}
+	})
 	return nil
 }
 
@@ -228,5 +248,6 @@ func isZeroValue(f *flag.Flag, value string) bool {
 	} else {
 		z = reflect.Zero(typ)
 	}
+	fmt.Printf("value: %v z: %v z.Interface().(flag.Value): %v\n", value, z, z.Interface().(flag.Value).String())
 	return value == z.Interface().(flag.Value).String()
 }
