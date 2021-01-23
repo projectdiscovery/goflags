@@ -16,7 +16,6 @@ import (
 // FlagSet is a list of flags for an application
 type FlagSet struct {
 	description string
-	configFile  string
 	flagKeys    map[string]*flagData
 }
 
@@ -43,28 +42,23 @@ func (f *FlagSet) SetDescription(description string) {
 	f.description = description
 }
 
-// SetConfigFile sets a config file to read values from.
-func (f *FlagSet) SetConfigFile(file string) {
-	f.configFile = file
+// MergeConfigFile reads a config file to merge values from.
+func (f *FlagSet) MergeConfigFile(file string) error {
+	return f.readConfigFile(file)
 }
 
 // Parse parses the flags provided to the library.
-func (f *FlagSet) Parse() error {
+func (f *FlagSet) Parse() {
 	flag.CommandLine.Usage = f.usageFunc
 	flag.Parse()
-
-	if f.configFile == "" {
-		return nil
-	}
-	return f.readConfigFile()
 }
 
 // readConfigFile reads the config file and returns any flags
 // that might have been set by the config file.
 //
 // Command line flags however always take prcedence over config file ones.
-func (f *FlagSet) readConfigFile() error {
-	file, err := os.Open(f.configFile)
+func (f *FlagSet) readConfigFile(filePath string) error {
+	file, err := os.Open(filePath)
 	if err != nil {
 		return errors.Wrap(err, "could not open config file")
 	}
