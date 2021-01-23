@@ -248,6 +248,5 @@ func isZeroValue(f *flag.Flag, value string) bool {
 	} else {
 		z = reflect.Zero(typ)
 	}
-	fmt.Printf("value: %v z: %v z.Interface().(flag.Value): %v\n", value, z, z.Interface().(flag.Value).String())
 	return value == z.Interface().(flag.Value).String()
 }
