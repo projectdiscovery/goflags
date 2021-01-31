@@ -53,14 +53,14 @@ func (f *FlagSet) MergeConfigFile(file string) error {
 }
 
 // Parse parses the flags provided to the library.
-func (f *FlagSet) Parse() error {
+func (f *FlagSet) Parse() {
 	flag.CommandLine.Usage = f.usageFunc
 	flag.Parse()
 
 	appName := os.Args[0]
 	homepath, err := os.UserHomeDir()
 	if err != nil {
-		return errors.Wrap(err, "could not get user home directory")
+		return
 	}
 
 	config := path.Join(homepath, ".config", appName, "default-config.yaml")
@@ -68,7 +68,6 @@ func (f *FlagSet) Parse() error {
 		configData := f.generateDefaultConfig()
 		_ = ioutil.WriteFile(config, configData, os.ModePerm)
 	}
-	return nil
 }
 
 // generateDefaultConfig generates a default YAML config file for a flagset.
