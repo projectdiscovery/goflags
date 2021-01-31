@@ -127,7 +127,7 @@ func (f *FlagSet) readConfigFile(filePath string) error {
 }
 
 // StringVarP adds a string flag with a shortname and longname
-func (f *FlagSet) StringVarP(field *string, short, long, defaultValue, usage string) {
+func (f *FlagSet) StringVarP(field *string, long, short, defaultValue, usage string) {
 	flag.StringVar(field, short, defaultValue, usage)
 	flag.StringVar(field, long, defaultValue, usage)
 
