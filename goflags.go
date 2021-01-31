@@ -1,10 +1,14 @@
 package goflags
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"os"
+	"path"
 	"reflect"
+	"strconv"
 	"strings"
 	"text/tabwriter"
 
@@ -20,9 +24,10 @@ type FlagSet struct {
 }
 
 type flagData struct {
-	usage string
-	short string
-	long  string
+	usage        string
+	short        string
+	long         string
+	defaultValue string
 }
 
 // Hash returns the unique hash for a flagData structure
@@ -48,9 +53,47 @@ func (f *FlagSet) MergeConfigFile(file string) error {
 }
 
 // Parse parses the flags provided to the library.
-func (f *FlagSet) Parse() {
+func (f *FlagSet) Parse() error {
 	flag.CommandLine.Usage = f.usageFunc
 	flag.Parse()
+
+	appName := os.Args[0]
+	homepath, err := os.UserHomeDir()
+	if err != nil {
+		return errors.Wrap(err, "could not get user home directory")
+	}
+
+	config := path.Join(homepath, ".config", appName, "default-config.yaml")
+	if _, err := os.Stat(config); os.IsNotExist(err) {
+		configData := f.generateDefaultConfig()
+		_ = ioutil.WriteFile(config, configData, os.ModePerm)
+	}
+	return nil
+}
+
+// generateDefaultConfig generates a default YAML config file for a flagset.
+func (f *FlagSet) generateDefaultConfig() []byte {
+	hashes := make(map[string]struct{})
+	configBuffer := &bytes.Buffer{}
+
+	for _, v := range f.flagKeys {
+		dataHash := v.Hash()
+		if _, ok := hashes[dataHash]; ok {
+			continue
+		}
+		hashes[dataHash] = struct{}{}
+
+		configBuffer.WriteString("# ")
+		configBuffer.WriteString(v.usage)
+		configBuffer.WriteString("\n")
+		configBuffer.WriteString("#")
+		configBuffer.WriteString(v.long)
+		configBuffer.WriteString(": ")
+		configBuffer.WriteString(v.defaultValue)
+		configBuffer.WriteString("\n")
+		configBuffer.WriteString("\n")
+	}
+	return bytes.TrimSuffix(configBuffer.Bytes(), []byte("\n\n"))
 }
 
 // readConfigFile reads the config file and returns any flags
@@ -85,9 +128,10 @@ func (f *FlagSet) StringVarP(field *string, short, long, defaultValue, usage str
 	flag.StringVar(field, long, defaultValue, usage)
 
 	flagData := &flagData{
-		usage: usage,
-		short: short,
-		long:  long,
+		usage:        usage,
+		short:        short,
+		long:         long,
+		defaultValue: defaultValue,
 	}
 	f.flagKeys[short] = flagData
 	f.flagKeys[long] = flagData
@@ -98,8 +142,9 @@ func (f *FlagSet) StringVar(field *string, long, defaultValue, usage string) {
 	flag.StringVar(field, long, defaultValue, usage)
 
 	flagData := &flagData{
-		usage: usage,
-		long:  long,
+		usage:        usage,
+		long:         long,
+		defaultValue: defaultValue,
 	}
 	f.flagKeys[long] = flagData
 }
@@ -110,9 +155,10 @@ func (f *FlagSet) BoolVarP(field *bool, long, short string, defaultValue bool, u
 	flag.BoolVar(field, long, defaultValue, usage)
 
 	flagData := &flagData{
-		usage: usage,
-		short: short,
-		long:  long,
+		usage:        usage,
+		short:        short,
+		long:         long,
+		defaultValue: strconv.FormatBool(defaultValue),
 	}
 	f.flagKeys[short] = flagData
 	f.flagKeys[long] = flagData
@@ -123,8 +169,9 @@ func (f *FlagSet) BoolVar(field *bool, long string, defaultValue bool, usage str
 	flag.BoolVar(field, long, defaultValue, usage)
 
 	flagData := &flagData{
-		usage: usage,
-		long:  long,
+		usage:        usage,
+		long:         long,
+		defaultValue: strconv.FormatBool(defaultValue),
 	}
 	f.flagKeys[long] = flagData
 }
@@ -135,9 +182,10 @@ func (f *FlagSet) IntVarP(field *int, long, short string, defaultValue int, usag
 	flag.IntVar(field, long, defaultValue, usage)
 
 	flagData := &flagData{
-		usage: usage,
-		short: short,
-		long:  long,
+		usage:        usage,
+		short:        short,
+		long:         long,
+		defaultValue: strconv.Itoa(defaultValue),
 	}
 	f.flagKeys[short] = flagData
 	f.flagKeys[long] = flagData
@@ -148,8 +196,9 @@ func (f *FlagSet) IntVar(field *int, long string, defaultValue int, usage string
 	flag.IntVar(field, long, defaultValue, usage)
 
 	flagData := &flagData{
-		usage: usage,
-		long:  long,
+		usage:        usage,
+		long:         long,
+		defaultValue: strconv.Itoa(defaultValue),
 	}
 	f.flagKeys[long] = flagData
 }
@@ -163,10 +212,23 @@ func (f *FlagSet) StringSliceVarP(field *StringSlice, long, short string, defaul
 	flag.Var(field, short, usage)
 	flag.Var(field, long, usage)
 
+	defaultBuilder := &strings.Builder{}
+	defaultBuilder.WriteString("[")
+	for i, k := range *field {
+		defaultBuilder.WriteString("\"")
+		defaultBuilder.WriteString(k)
+		defaultBuilder.WriteString("\"")
+		if i != len(*field)-1 {
+			defaultBuilder.WriteString(", ")
+		}
+	}
+	defaultBuilder.WriteString("]")
+
 	flagData := &flagData{
-		usage: usage,
-		short: short,
-		long:  long,
+		usage:        usage,
+		short:        short,
+		long:         long,
+		defaultValue: defaultBuilder.String(),
 	}
 	f.flagKeys[short] = flagData
 	f.flagKeys[long] = flagData
@@ -177,11 +239,25 @@ func (f *FlagSet) StringSliceVar(field *StringSlice, long string, defaultValue [
 	for _, item := range defaultValue {
 		_ = field.Set(item)
 	}
+
+	defaultBuilder := &strings.Builder{}
+	defaultBuilder.WriteString("[")
+	for i, k := range *field {
+		defaultBuilder.WriteString("\"")
+		defaultBuilder.WriteString(k)
+		defaultBuilder.WriteString("\"")
+		if i != len(*field)-1 {
+			defaultBuilder.WriteString(", ")
+		}
+	}
+	defaultBuilder.WriteString("]")
+
 	flag.Var(field, long, usage)
 
 	flagData := &flagData{
-		usage: usage,
-		long:  long,
+		usage:        usage,
+		long:         long,
+		defaultValue: defaultBuilder.String(),
 	}
 	f.flagKeys[long] = flagData
 }
