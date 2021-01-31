@@ -64,6 +64,7 @@ func (f *FlagSet) Parse() error {
 	}
 
 	config := path.Join(homepath, ".config", appName, "default-config.yaml")
+	os.MkdirAll(path.Dir(config))
 	if _, err := os.Stat(config); os.IsNotExist(err) {
 		configData := f.generateDefaultConfig()
 		return ioutil.WriteFile(config, configData, os.ModePerm)
