@@ -57,7 +57,7 @@ func (f *FlagSet) Parse() {
 	flag.CommandLine.Usage = f.usageFunc
 	flag.Parse()
 
-	appName := os.Args[0]
+	appName := path.Base(os.Args[0])
 	homepath, err := os.UserHomeDir()
 	if err != nil {
 		return
