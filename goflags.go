@@ -27,7 +27,7 @@ type flagData struct {
 	usage        string
 	short        string
 	long         string
-	defaultValue string
+	defaultValue interface{}
 }
 
 // Hash returns the unique hash for a flagData structure
@@ -93,7 +93,12 @@ func (f *FlagSet) generateDefaultConfig() []byte {
 		configBuffer.WriteString("#")
 		configBuffer.WriteString(v.long)
 		configBuffer.WriteString(": ")
-		configBuffer.WriteString(v.defaultValue)
+		if s, ok := v.defaultValue.(string); ok {
+			configBuffer.WriteString(s)
+		} else if dv, ok := v.defaultValue.(flag.Value); ok {
+			configBuffer.WriteString(dv.String())
+		}
+
 		configBuffer.WriteString("\n")
 		configBuffer.WriteString("\n")
 	}
@@ -124,6 +129,33 @@ func (f *FlagSet) readConfigFile(filePath string) error {
 		}
 	})
 	return nil
+}
+
+// VarP adds a Var flag with a shortname and longname
+func (f *FlagSet) VarP(field flag.Value, long, short, usage string) {
+	flag.Var(field, short, usage)
+	flag.Var(field, long, usage)
+
+	flagData := &flagData{
+		usage:        usage,
+		short:        short,
+		long:         long,
+		defaultValue: field,
+	}
+	f.flagKeys[short] = flagData
+	f.flagKeys[long] = flagData
+}
+
+// Var adds a Var flag with a longname
+func (f *FlagSet) Var(field flag.Value, long, usage string) {
+	flag.Var(field, long, usage)
+
+	flagData := &flagData{
+		usage:        usage,
+		long:         long,
+		defaultValue: field,
+	}
+	f.flagKeys[long] = flagData
 }
 
 // StringVarP adds a string flag with a shortname and longname
