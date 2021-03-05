@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"path/filepath"
 	"reflect"
 	"strconv"
 	"strings"
@@ -57,14 +58,16 @@ func (f *FlagSet) Parse() error {
 	flag.CommandLine.Usage = f.usageFunc
 	flag.Parse()
 
-	appName := path.Base(os.Args[0])
+	appName := filepath.Base(os.Args[0])
+	// trim extension from app name
+	appName = strings.TrimSuffix(appName, filepath.Ext(appName))
 	homepath, err := os.UserHomeDir()
 	if err != nil {
 		return err
 	}
 
-	config := path.Join(homepath, ".config", appName, "default-config.yaml")
-	_ = os.MkdirAll(path.Dir(config), os.ModePerm)
+	config := filepath.Join(homepath, ".config", appName, "default-config.yaml")
+	_ = os.MkdirAll(filepath.Dir(config), os.ModePerm)
 	if _, err := os.Stat(config); os.IsNotExist(err) {
 		configData := f.generateDefaultConfig()
 		return ioutil.WriteFile(config, configData, os.ModePerm)
