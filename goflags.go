@@ -126,6 +126,16 @@ func (f *FlagSet) readConfigFile(filePath string) error {
 	return nil
 }
 
+// StringVarEnv adds a string flag with a shortname and longname with a default value read from env variable
+// with a default value fallback
+func (f *FlagSet) StringVarEnv(field *string, long, short, defaultValue, envName, usage string) {
+	if envValue, exists := os.LookupEnv(envName); exists {
+		defaultValue = envValue
+	}
+
+	f.StringVarP(field, long, short, defaultValue, usage)
+}
+
 // StringVarP adds a string flag with a shortname and longname
 func (f *FlagSet) StringVarP(field *string, long, short, defaultValue, usage string) {
 	flag.StringVar(field, short, defaultValue, usage)
