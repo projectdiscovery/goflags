@@ -120,7 +120,7 @@ func (f *FlagSet) readConfigFile(filePath string) error {
 	}
 	defer file.Close()
 
-	data := make(map[string]string)
+	data := make(map[string]interface{})
 	err = yaml.NewDecoder(file).Decode(&data)
 	if err != nil {
 		return errors.Wrap(err, "could not unmarshal config file")
@@ -128,8 +128,23 @@ func (f *FlagSet) readConfigFile(filePath string) error {
 	flag.CommandLine.VisitAll(func(fl *flag.Flag) {
 		item, ok := data[fl.Name]
 		value := fl.Value.String()
+
 		if strings.EqualFold(fl.DefValue, value) && ok {
-			_ = fl.Value.Set(item)
+			switch data := item.(type) {
+			case string:
+				_ = fl.Value.Set(data)
+			case bool:
+				_ = fl.Value.Set(strconv.FormatBool(data))
+			case int:
+				_ = fl.Value.Set(strconv.Itoa(data))
+			case []interface{}:
+				for _, v := range data {
+					vStr, ok := v.(string)
+					if ok {
+						_ = fl.Value.Set(vStr)
+					}
+				}
+			}
 		}
 	})
 	return nil
