@@ -351,7 +351,11 @@ func (f *FlagSet) usageFunc() {
 
 	w := tabwriter.NewWriter(flag.CommandLine.Output(), 0, 0, 1, ' ', 0)
 	flag.CommandLine.VisitAll(func(fl *flag.Flag) {
-		data, _ := f.flagKeys[fl.Name]
+		data, ok := f.flagKeys[fl.Name]
+		// Ignore all non goflags settings
+		if !ok {
+			return
+		}
 
 		dataHash := data.Hash()
 		if _, ok := hashes[dataHash]; ok {
