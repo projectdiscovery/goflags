@@ -403,7 +403,7 @@ func createUsageString(data *flagData, fl *flag.Flag) string {
 		case "*flag.stringValue":
 			defaultValueTemplate += "%q)"
 		default:
-			defaultValueTemplate = " %v)"
+			defaultValueTemplate += "%v)"
 		}
 		result += fmt.Sprintf(defaultValueTemplate, data.defaultValue)
 	}
