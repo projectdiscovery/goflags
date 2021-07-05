@@ -1,9 +1,11 @@
 package goflags
 
 import (
+	"flag"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"os"
+	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -26,11 +28,12 @@ func TestGenerateDefaultConfig(t *testing.T) {
 	flagSet.StringVar(&data, "test", "test-default-value", "Default value for a test flag example")
 	flagSet.StringSliceVar(&data2, "slice", []string{"item1", "item2"}, "String slice flag example value")
 	require.Equal(t, example, string(flagSet.generateDefaultConfig()), "could not get correct default config")
+
+	tearDown(t.Name())
 }
 
 func TestConfigFileDataTypes(t *testing.T) {
 	flagSet := NewFlagSet()
-
 	var data string
 	var data2 StringSlice
 	var data3 int
@@ -43,9 +46,9 @@ func TestConfigFileDataTypes(t *testing.T) {
 
 	configFileData := `
 string-value: test
-slice-value: 
-  - test
-  - test2
+slice-value:
+ - test
+ - test2
 int-value: 543
 bool-value: true`
 	err := ioutil.WriteFile("test.yaml", []byte(configFileData), os.ModePerm)
@@ -59,6 +62,8 @@ bool-value: true`
 	require.Equal(t, StringSlice{"test", "test2"}, data2, "could not get correct string slice")
 	require.Equal(t, 543, data3, "could not get correct int")
 	require.Equal(t, true, data4, "could not get correct bool")
+
+	tearDown(t.Name())
 }
 
 func TestUsageOrder(t *testing.T) {
@@ -88,24 +93,54 @@ func TestUsageOrder(t *testing.T) {
 	flagSet.BoolVarP(&boolData, "bool-with-default-value2", "bwdv", true, "Bool with default value example #2")
 
 	flagSet.usageFunc()
+
+	tearDown(t.Name())
 }
 
-func TestIncorrectFlagsCausePanic(t *testing.T) {
+func TestIncorrectStringFlagsCausePanic(t *testing.T) {
 	flagSet := NewFlagSet()
 	var stringData string
 
 	flagSet.StringVar(&stringData, "", "test-string", "String with default value example")
 	assert.Panics(t, flagSet.usageFunc)
 
-	testSetBadChars := func(short string, long string) {
-		flagSet.StringVarP(&stringData, short, long, "test-string", "String with default value example")
-		flagSet.usageFunc()
+	tearDown(t.Name())
+}
+
+func TestIncorrectFlagsCausePanic(t *testing.T) {
+	type flagPair struct {
+		Short, Long string
 	}
 
-	for _, badChar := range [3]string{" ", "\t", "\n"} {
-		assert.Panics(t, func() { testSetBadChars("", "") })
-		assert.Panics(t, func() { testSetBadChars("", badChar) })
-		assert.Panics(t, func() { testSetBadChars(badChar, "") })
-		assert.Panics(t, func() { testSetBadChars(badChar, badChar) })
+	createTestParameters := func() []flagPair {
+		var result []flagPair
+		result = append(result, flagPair{"", ""})
+
+		badFlagNames := [...]string{" ", "\t", "\n"}
+		for _, badFlagName := range badFlagNames {
+			result = append(result, flagPair{"", badFlagName})
+			result = append(result, flagPair{badFlagName, ""})
+			result = append(result, flagPair{badFlagName, badFlagName})
+		}
+		return result
 	}
+
+	for index, tuple := range createTestParameters() {
+		uniqueName := strconv.Itoa(index)
+		t.Run(uniqueName, func(t *testing.T) {
+			assert.Panics(t, func() {
+				tearDown(uniqueName)
+
+				flagSet := NewFlagSet()
+				var stringData string
+
+				flagSet.StringVarP(&stringData, tuple.Short, tuple.Long, "test-string", "String with default value example")
+				flagSet.usageFunc()
+			})
+		})
+	}
+}
+
+func tearDown(uniqueValue string) { // sadly there is no official support for setup/teardown/test
+	flag.CommandLine = flag.NewFlagSet(uniqueValue, flag.PanicOnError)
 }
