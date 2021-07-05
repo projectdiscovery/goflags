@@ -96,9 +96,9 @@ func (flagSet *FlagSet) generateDefaultConfig() []byte {
 	if flagSet.Marshal {
 		flagsToMarshall := make(map[string]interface{})
 
-		for _, key := range flagSet.flagKeys.keys {
-			flagsToMarshall[key] = flagSet.flagKeys.Get(key).defaultValue
-		}
+		flagSet.flagKeys.forEach(func(key string, data *flagData) {
+			flagsToMarshall[key] = data.defaultValue
+		})
 
 		flagSetBytes, err := yaml.Marshal(flagsToMarshall)
 		if err == nil {
@@ -107,28 +107,28 @@ func (flagSet *FlagSet) generateDefaultConfig() []byte {
 		}
 	}
 
-	for _, key := range flagSet.flagKeys.keys {
-		value := flagSet.flagKeys.values[key]
-		dataHash := value.Hash()
+	flagSet.flagKeys.forEach(func(key string, data *flagData) {
+		dataHash := data.Hash()
 		if _, ok := hashes[dataHash]; ok {
-			continue
+			return
 		}
 		hashes[dataHash] = struct{}{}
 
 		configBuffer.WriteString("# ")
-		configBuffer.WriteString(strings.ToLower(value.usage))
+		configBuffer.WriteString(strings.ToLower(data.usage))
 		configBuffer.WriteString("\n")
 		configBuffer.WriteString("#")
-		configBuffer.WriteString(value.long)
+		configBuffer.WriteString(data.long)
 		configBuffer.WriteString(": ")
-		if s, ok := value.defaultValue.(string); ok {
+		if s, ok := data.defaultValue.(string); ok {
 			configBuffer.WriteString(s)
-		} else if dv, ok := value.defaultValue.(flag.Value); ok {
+		} else if dv, ok := data.defaultValue.(flag.Value); ok {
 			configBuffer.WriteString(dv.String())
 		}
 
 		configBuffer.WriteString("\n\n")
-	}
+	})
+
 	return bytes.TrimSuffix(configBuffer.Bytes(), []byte("\n\n"))
 }
 
@@ -361,7 +361,7 @@ func (flagSet *FlagSet) usageFunc() {
 	writer := tabwriter.NewWriter(cliOutput, 0, 0, 1, ' ', 0)
 
 	flagSet.flagKeys.forEach(func(key string, data *flagData) {
-		fl := flag.CommandLine.Lookup(key)
+		currentFlag := flag.CommandLine.Lookup(key)
 
 		dataHash := data.Hash()
 		if _, ok := hashes[dataHash]; ok {
@@ -369,7 +369,7 @@ func (flagSet *FlagSet) usageFunc() {
 		}
 		hashes[dataHash] = struct{}{}
 
-		result := createUsageString(data, fl)
+		result := createUsageString(data, currentFlag)
 		fmt.Fprint(writer, result, "\n")
 	})
 	writer.Flush()
@@ -379,49 +379,68 @@ func isNotBlank(value string) bool {
 	return len(strings.TrimSpace(value)) != 0
 }
 
-func createUsageString(data *flagData, fl *flag.Flag) string {
-	result := strings.Repeat(" ", 2) + "\t"
+func createUsageString(data *flagData, currentFlag *flag.Flag) string {
+	valueType := reflect.TypeOf(currentFlag.Value)
 
-	var isShortSet bool
-	if isNotBlank(data.short) {
-		isShortSet = true
-		result += fmt.Sprintf("-%s", data.short)
-	}
+	result := createUsageFlagNames(data)
+	result += createUsageTypeAndDescription(currentFlag, valueType)
+	result += createUsageDefaultValue(data, currentFlag, valueType)
 
-	var isLongSet bool
-	if isNotBlank(data.long) {
-		if isShortSet {
-			result += ", "
-		}
-		isLongSet = true
-		result += fmt.Sprintf("-%s", data.long)
-	}
+	return result
+}
 
-	if !isShortSet && !isLongSet {
-		panic("CLI arguments cannot be empty.")
-	}
-
-	name, usage := flag.UnquoteUsage(fl)
-	if len(name) > 0 {
-		result += " " + name
-	}
-
-	result += "\t\t"
-	result += strings.ReplaceAll(usage, "\n", "\n"+strings.Repeat(" ", 4)+"\t")
-
-	if !isZeroValue(fl, fl.DefValue) {
+func createUsageDefaultValue(data *flagData, currentFlag *flag.Flag, valueType reflect.Type) string {
+	if !isZeroValue(currentFlag, currentFlag.DefValue) {
 		defaultValueTemplate := " (default "
-		switch reflect.TypeOf(fl.Value).String() { // ugly hack because "flag.stringValue" is not exported from the parent library
+		switch valueType.String() { // ugly hack because "flag.stringValue" is not exported from the parent library
 		case "*flag.stringValue":
 			defaultValueTemplate += "%q"
 		default:
 			defaultValueTemplate += "%v"
 		}
 		defaultValueTemplate += ")"
-		result += fmt.Sprintf(defaultValueTemplate, data.defaultValue)
+		return fmt.Sprintf(defaultValueTemplate, data.defaultValue)
+	}
+	return ""
+}
+
+func createUsageTypeAndDescription(currentFlag *flag.Flag, valueType reflect.Type) string {
+	var result string
+	flagDisplayType, usage := flag.UnquoteUsage(currentFlag)
+	if len(flagDisplayType) > 0 {
+		if flagDisplayType == "value" {
+			var stringSlicePointerType *StringSlice
+			if valueType == reflect.TypeOf(stringSlicePointerType) { // refactor safe check
+				flagDisplayType = "string[]"
+			}
+		}
+		result += " " + flagDisplayType
 	}
 
+	result += "\t\t"
+	result += strings.ReplaceAll(usage, "\n", "\n"+strings.Repeat(" ", 4)+"\t")
 	return result
+}
+
+func createUsageFlagNames(data *flagData) string {
+	flagNames := strings.Repeat(" ", 2) + "\t"
+
+	var validFlags []string
+	addValidParam := func(value string) {
+		if isNotBlank(value) {
+			validFlags = append(validFlags, fmt.Sprintf("-%s", value))
+		}
+	}
+
+	addValidParam(data.short)
+	addValidParam(data.long)
+
+	if len(validFlags) == 0 {
+		panic("CLI arguments cannot be empty.")
+	}
+
+	flagNames += strings.Join(validFlags, ", ")
+	return flagNames
 }
 
 // isZeroValue determines whether the string represents the zero
