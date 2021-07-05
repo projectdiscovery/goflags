@@ -32,6 +32,18 @@ type flagData struct {
 	defaultValue interface{}
 }
 
+// NewFlagSet creates a new flagSet structure for the application
+func NewFlagSet() *FlagSet {
+	return &FlagSet{flagKeys: *newInsertionOrderedMap()}
+}
+
+func newInsertionOrderedMap() *InsertionOrderedMap {
+	return &InsertionOrderedMap{
+		values: make(map[string]*flagData),
+		keys:   make([]string, 0, 0),
+	}
+}
+
 // Hash returns the unique hash for a flagData structure
 // NOTE: Hash panics when the structure cannot be hashed.
 func (flagSet *flagData) Hash() string {
@@ -401,10 +413,11 @@ func createUsageString(data *flagData, fl *flag.Flag) string {
 		defaultValueTemplate := " (default "
 		switch reflect.TypeOf(fl.Value).String() { // ugly hack because "flag.stringValue" is not exported from the parent library
 		case "*flag.stringValue":
-			defaultValueTemplate += "%q)"
+			defaultValueTemplate += "%q"
 		default:
-			defaultValueTemplate += "%v)"
+			defaultValueTemplate += "%v"
 		}
+		defaultValueTemplate += ")"
 		result += fmt.Sprintf(defaultValueTemplate, data.defaultValue)
 	}
 
