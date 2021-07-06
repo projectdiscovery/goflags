@@ -5,14 +5,9 @@ type InsertionOrderedMap struct {
 	keys   []string `yaml:"-"`
 }
 
-func (insertionOrderedMap *InsertionOrderedMap) Get(key string) *flagData {
-	value := insertionOrderedMap.values[key]
-	return value
-}
-
 func (insertionOrderedMap *InsertionOrderedMap) forEach(fn func(key string, data *flagData)) {
 	for _, key := range insertionOrderedMap.keys {
-		fn(key, insertionOrderedMap.Get(key))
+		fn(key, insertionOrderedMap.values[key])
 	}
 }
 
