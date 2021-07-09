@@ -1,6 +1,7 @@
 package goflags
 
 import (
+	"encoding/json"
 	"github.com/pkg/errors"
 	"strings"
 )
@@ -51,4 +52,70 @@ func (severity Severity) normalize() string {
 
 func (severity Severity) String() string {
 	return severityMappings[severity]
+}
+
+type SeverityHolder struct {
+	Severity Severity
+}
+
+func (severityHolder SeverityHolder) MarshalYAML() (interface{}, error) {
+	if value, found := severityMappings[severityHolder.Severity]; found {
+		return &struct{ Severity string }{value}, nil // TODO see if the new struct can be dynamically created using reflection to make it refactor safe
+	} else {
+		panic("Invalid field to marshall")
+	}
+}
+
+func (severityHolder SeverityHolder) MarshalJSON() ([]byte, error) {
+	if value, found := severityMappings[severityHolder.Severity]; found {
+		return json.Marshal(&struct{ Severity string }{value}) // TODO see if the new struct can be dynamically created using reflection to make it refactor safe
+	} else {
+		panic("Invalid field to marshall")
+	}
+}
+
+func (severityHolder *SeverityHolder) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	var marshalledSeverity string
+	if err := unmarshal(&marshalledSeverity); err != nil {
+		return err
+	}
+
+	computedSeverity, err := toSeverity(marshalledSeverity)
+	if err != nil {
+		return err
+	}
+
+	severityHolder.Severity = computedSeverity
+	return nil
+}
+
+func (severityHolder *SeverityHolder) UnmarshalJSON(data []byte) error {
+	var objMap map[string]string
+	if err := json.Unmarshal(data, &objMap); err != nil {
+		return err
+	}
+
+	return mapToSeverity(objMap, severityHolder)
+}
+
+func mapToSeverity(objMap map[string]string, severity *SeverityHolder) error {
+	if len(objMap) != 1 {
+		return errors.New("There can only be one severity defined")
+	}
+	stringSeverity := getFirstValue(objMap)
+	if readableSeverity, err := toSeverity(stringSeverity); err == nil {
+		severity = &SeverityHolder{readableSeverity}
+		return nil
+	} else {
+		return err
+	}
+}
+
+func getFirstValue(stringMap map[string]string) string {
+	var result string
+	for _, value := range stringMap {
+		result = value
+		break
+	}
+	return result
 }
