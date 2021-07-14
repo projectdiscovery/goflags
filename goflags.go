@@ -23,13 +23,25 @@ type FlagSet struct {
 	Marshal     bool
 	description string
 	flagKeys    InsertionOrderedMap
+	groups      []groupData
 }
 
-type flagData struct {
+type groupData struct {
+	name string
+	description string
+}
+
+type FlagData struct {
 	usage        string
 	short        string
 	long         string
+	group        string // unused unless set later
 	defaultValue interface{}
+}
+
+// Group sets the group for a flag data
+func (f *FlagData) Group(name string) {
+	f.group = name
 }
 
 // NewFlagSet creates a new flagSet structure for the application
@@ -39,21 +51,28 @@ func NewFlagSet() *FlagSet {
 
 func newInsertionOrderedMap() *InsertionOrderedMap {
 	return &InsertionOrderedMap{
-		values: make(map[string]*flagData),
+		values: make(map[string]*FlagData),
 		keys:   make([]string, 0, 0),
 	}
 }
 
 // Hash returns the unique hash for a flagData structure
 // NOTE: Hash panics when the structure cannot be hashed.
-func (flagSet *flagData) Hash() string {
-	hash, _ := structhash.Hash(flagSet, 1)
+func (f *FlagData) Hash() string {
+	hash, _ := structhash.Hash(f, 1)
 	return hash
 }
 
 // SetDescription sets the description field for a flagSet to a value.
 func (flagSet *FlagSet) SetDescription(description string) {
 	flagSet.description = description
+}
+
+// SetGroup sets a group with name and description for the command line options
+//
+// The order in which groups are passed is also kept as is, similar to flags.
+func (flagSet *FlagSet) SetGroup(name, description string) {
+	flagSet.groups = append(flagSet.groups, groupData{name: name, description: description})
 }
 
 // MergeConfigFile reads a config file to merge values from.
@@ -96,7 +115,7 @@ func (flagSet *FlagSet) generateDefaultConfig() []byte {
 	if flagSet.Marshal {
 		flagsToMarshall := make(map[string]interface{})
 
-		flagSet.flagKeys.forEach(func(key string, data *flagData) {
+		flagSet.flagKeys.forEach(func(key string, data *FlagData) {
 			flagsToMarshall[key] = data.defaultValue
 		})
 
@@ -107,7 +126,7 @@ func (flagSet *FlagSet) generateDefaultConfig() []byte {
 		}
 	}
 
-	flagSet.flagKeys.forEach(func(key string, data *flagData) {
+	flagSet.flagKeys.forEach(func(key string, data *FlagData) {
 		dataHash := data.Hash()
 		if _, ok := hashes[dataHash]; ok {
 			return
@@ -174,11 +193,11 @@ func (flagSet *FlagSet) readConfigFile(filePath string) error {
 }
 
 // VarP adds a Var flag with a shortname and longname
-func (flagSet *FlagSet) VarP(field flag.Value, long, short, usage string) {
+func (flagSet *FlagSet) VarP(field flag.Value, long, short, usage string) *FlagData {
 	flag.Var(field, short, usage)
 	flag.Var(field, long, usage)
 
-	flagData := &flagData{
+	flagData := &FlagData{
 		usage:        usage,
 		short:        short,
 		long:         long,
@@ -186,36 +205,37 @@ func (flagSet *FlagSet) VarP(field flag.Value, long, short, usage string) {
 	}
 	flagSet.flagKeys.Set(short, flagData)
 	flagSet.flagKeys.Set(long, flagData)
+	return flagData
 }
 
 // Var adds a Var flag with a longname
-func (flagSet *FlagSet) Var(field flag.Value, long, usage string) {
+func (flagSet *FlagSet) Var(field flag.Value, long, usage string) *FlagData {
 	flag.Var(field, long, usage)
 
-	flagData := &flagData{
+	flagData := &FlagData{
 		usage:        usage,
 		long:         long,
 		defaultValue: field,
 	}
 	flagSet.flagKeys.Set(long, flagData)
+	return flagData
 }
 
 // StringVarEnv adds a string flag with a shortname and longname with a default value read from env variable
 // with a default value fallback
-func (flagSet *FlagSet) StringVarEnv(field *string, long, short, defaultValue, envName, usage string) {
+func (flagSet *FlagSet) StringVarEnv(field *string, long, short, defaultValue, envName, usage string) *FlagData {
 	if envValue, exists := os.LookupEnv(envName); exists {
 		defaultValue = envValue
 	}
-
-	flagSet.StringVarP(field, long, short, defaultValue, usage)
+	return flagSet.StringVarP(field, long, short, defaultValue, usage)
 }
 
 // StringVarP adds a string flag with a shortname and longname
-func (flagSet *FlagSet) StringVarP(field *string, long, short, defaultValue, usage string) {
+func (flagSet *FlagSet) StringVarP(field *string, long, short, defaultValue, usage string) *FlagData {
 	flag.StringVar(field, short, defaultValue, usage)
 	flag.StringVar(field, long, defaultValue, usage)
 
-	flagData := &flagData{
+	flagData := &FlagData{
 		usage:        usage,
 		short:        short,
 		long:         long,
@@ -223,26 +243,28 @@ func (flagSet *FlagSet) StringVarP(field *string, long, short, defaultValue, usa
 	}
 	flagSet.flagKeys.Set(short, flagData)
 	flagSet.flagKeys.Set(long, flagData)
+	return flagData
 }
 
 // StringVar adds a string flag with a longname
-func (flagSet *FlagSet) StringVar(field *string, long, defaultValue, usage string) {
+func (flagSet *FlagSet) StringVar(field *string, long, defaultValue, usage string) *FlagData {
 	flag.StringVar(field, long, defaultValue, usage)
 
-	flagData := &flagData{
+	flagData := &FlagData{
 		usage:        usage,
 		long:         long,
 		defaultValue: defaultValue,
 	}
 	flagSet.flagKeys.Set(long, flagData)
+	return flagData
 }
 
 // BoolVarP adds a bool flag with a shortname and longname
-func (flagSet *FlagSet) BoolVarP(field *bool, long, short string, defaultValue bool, usage string) {
+func (flagSet *FlagSet) BoolVarP(field *bool, long, short string, defaultValue bool, usage string) *FlagData {
 	flag.BoolVar(field, short, defaultValue, usage)
 	flag.BoolVar(field, long, defaultValue, usage)
 
-	flagData := &flagData{
+	flagData := &FlagData{
 		usage:        usage,
 		short:        short,
 		long:         long,
@@ -250,26 +272,28 @@ func (flagSet *FlagSet) BoolVarP(field *bool, long, short string, defaultValue b
 	}
 	flagSet.flagKeys.Set(short, flagData)
 	flagSet.flagKeys.Set(long, flagData)
+	return flagData
 }
 
 // BoolVar adds a bool flag with a longname
-func (flagSet *FlagSet) BoolVar(field *bool, long string, defaultValue bool, usage string) {
+func (flagSet *FlagSet) BoolVar(field *bool, long string, defaultValue bool, usage string) *FlagData {
 	flag.BoolVar(field, long, defaultValue, usage)
 
-	flagData := &flagData{
+	flagData := &FlagData{
 		usage:        usage,
 		long:         long,
 		defaultValue: strconv.FormatBool(defaultValue),
 	}
 	flagSet.flagKeys.Set(long, flagData)
+	return flagData
 }
 
 // IntVarP adds a int flag with a shortname and longname
-func (flagSet *FlagSet) IntVarP(field *int, long, short string, defaultValue int, usage string) {
+func (flagSet *FlagSet) IntVarP(field *int, long, short string, defaultValue int, usage string) *FlagData {
 	flag.IntVar(field, short, defaultValue, usage)
 	flag.IntVar(field, long, defaultValue, usage)
 
-	flagData := &flagData{
+	flagData := &FlagData{
 		usage:        usage,
 		short:        short,
 		long:         long,
@@ -277,22 +301,24 @@ func (flagSet *FlagSet) IntVarP(field *int, long, short string, defaultValue int
 	}
 	flagSet.flagKeys.Set(short, flagData)
 	flagSet.flagKeys.Set(long, flagData)
+	return flagData
 }
 
 // IntVar adds a int flag with a longname
-func (flagSet *FlagSet) IntVar(field *int, long string, defaultValue int, usage string) {
+func (flagSet *FlagSet) IntVar(field *int, long string, defaultValue int, usage string) *FlagData {
 	flag.IntVar(field, long, defaultValue, usage)
 
-	flagData := &flagData{
+	flagData := &FlagData{
 		usage:        usage,
 		long:         long,
 		defaultValue: strconv.Itoa(defaultValue),
 	}
 	flagSet.flagKeys.Set(long, flagData)
+	return flagData
 }
 
 // StringSliceVarP adds a string slice flag with a shortname and longname
-func (flagSet *FlagSet) StringSliceVarP(field *StringSlice, long, short string, defaultValue []string, usage string) {
+func (flagSet *FlagSet) StringSliceVarP(field *StringSlice, long, short string, defaultValue []string, usage string) *FlagData {
 	for _, item := range defaultValue {
 		_ = field.Set(item)
 	}
@@ -312,7 +338,7 @@ func (flagSet *FlagSet) StringSliceVarP(field *StringSlice, long, short string, 
 	}
 	defaultBuilder.WriteString("]")
 
-	flagData := &flagData{
+	flagData := &FlagData{
 		usage:        usage,
 		short:        short,
 		long:         long,
@@ -320,10 +346,11 @@ func (flagSet *FlagSet) StringSliceVarP(field *StringSlice, long, short string, 
 	}
 	flagSet.flagKeys.Set(short, flagData)
 	flagSet.flagKeys.Set(long, flagData)
+	return flagData
 }
 
 // StringSliceVar adds a string slice flag with a longname
-func (flagSet *FlagSet) StringSliceVar(field *StringSlice, long string, defaultValue []string, usage string) {
+func (flagSet *FlagSet) StringSliceVar(field *StringSlice, long string, defaultValue []string, usage string) *FlagData {
 	for _, item := range defaultValue {
 		_ = field.Set(item)
 	}
@@ -342,12 +369,13 @@ func (flagSet *FlagSet) StringSliceVar(field *StringSlice, long string, defaultV
 
 	flag.Var(field, long, usage)
 
-	flagData := &flagData{
+	flagData := &FlagData{
 		usage:        usage,
 		long:         long,
 		defaultValue: defaultBuilder.String(),
 	}
 	flagSet.flagKeys.Set(long, flagData)
+	return flagData
 }
 
 func (flagSet *FlagSet) usageFunc() {
@@ -360,26 +388,52 @@ func (flagSet *FlagSet) usageFunc() {
 
 	writer := tabwriter.NewWriter(cliOutput, 0, 0, 1, ' ', 0)
 
-	flagSet.flagKeys.forEach(func(key string, data *flagData) {
-		currentFlag := flag.CommandLine.Lookup(key)
+	if len(flagSet.groups) > 0 {
+		for _, group := range flagSet.groups {
+			fmt.Fprintf(cliOutput, "%s:\n", strings.ToUpper(group.description))
 
-		dataHash := data.Hash()
-		if _, ok := hashes[dataHash]; ok {
-			return // Don't print the value if printed previously
+			flagSet.flagKeys.forEach(func(key string, data *FlagData) {
+				// Ignore the flag if it's not in our intended group
+				if !strings.EqualFold(data.group, group.name) {
+					return
+				}
+
+				currentFlag := flag.CommandLine.Lookup(key)
+
+				dataHash := data.Hash()
+				if _, ok := hashes[dataHash]; ok {
+					return // Don't print the value if printed previously
+				}
+				hashes[dataHash] = struct{}{}
+
+				result := createUsageString(data, currentFlag)
+				fmt.Fprint(writer, result, "\n")
+				writer.Flush()
+			})
+			fmt.Printf("\n")
 		}
-		hashes[dataHash] = struct{}{}
+	} else {
+		flagSet.flagKeys.forEach(func(key string, data *FlagData) {
+			currentFlag := flag.CommandLine.Lookup(key)
 
-		result := createUsageString(data, currentFlag)
-		fmt.Fprint(writer, result, "\n")
-	})
-	writer.Flush()
+			dataHash := data.Hash()
+			if _, ok := hashes[dataHash]; ok {
+				return // Don't print the value if printed previously
+			}
+			hashes[dataHash] = struct{}{}
+
+			result := createUsageString(data, currentFlag)
+			fmt.Fprint(writer, result, "\n")
+		})
+		writer.Flush()
+	}
 }
 
 func isNotBlank(value string) bool {
 	return len(strings.TrimSpace(value)) != 0
 }
 
-func createUsageString(data *flagData, currentFlag *flag.Flag) string {
+func createUsageString(data *FlagData, currentFlag *flag.Flag) string {
 	valueType := reflect.TypeOf(currentFlag.Value)
 
 	result := createUsageFlagNames(data)
@@ -389,7 +443,7 @@ func createUsageString(data *flagData, currentFlag *flag.Flag) string {
 	return result
 }
 
-func createUsageDefaultValue(data *flagData, currentFlag *flag.Flag, valueType reflect.Type) string {
+func createUsageDefaultValue(data *FlagData, currentFlag *flag.Flag, valueType reflect.Type) string {
 	if !isZeroValue(currentFlag, currentFlag.DefValue) {
 		defaultValueTemplate := " (default "
 		switch valueType.String() { // ugly hack because "flag.stringValue" is not exported from the parent library
@@ -422,7 +476,7 @@ func createUsageTypeAndDescription(currentFlag *flag.Flag, valueType reflect.Typ
 	return result
 }
 
-func createUsageFlagNames(data *flagData) string {
+func createUsageFlagNames(data *FlagData) string {
 	flagNames := strings.Repeat(" ", 2) + "\t"
 
 	var validFlags []string
