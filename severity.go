@@ -26,15 +26,16 @@ var severityMappings = map[Severity]string{
 }
 
 func toSeverity(valueToMap string) (Severity, error) {
+	normalizedValue := normalizeValue(valueToMap)
 	for key, currentValue := range severityMappings {
-		if normalizeValue(valueToMap) == currentValue {
+		if normalizedValue == currentValue {
 			return key, nil
 		}
 	}
 	return -1, errors.New("Invalid severity: " + valueToMap)
 }
 
-func GetSupportedSeverities() []Severity {
+func GetSupportedSeverities() Severities {
 	var result []Severity
 	for index := Severity(0); index < limit; index++ {
 		result = append(result, index)
@@ -47,7 +48,7 @@ func normalizeValue(value string) string {
 }
 
 func (severity Severity) normalize() string {
-	return strings.TrimSpace(strings.ToLower(severity.String()))
+	return normalizeValue(severity.String())
 }
 
 func (severity Severity) String() string {
