@@ -389,28 +389,47 @@ func (flagSet *FlagSet) usageFunc() {
 	writer := tabwriter.NewWriter(cliOutput, 0, 0, 1, ' ', 0)
 
 	if len(flagSet.groups) > 0 {
+		var otherOptions []string
+
 		for _, group := range flagSet.groups {
 			fmt.Fprintf(cliOutput, "%s:\n", strings.ToUpper(group.description))
 
 			flagSet.flagKeys.forEach(func(key string, data *FlagData) {
-				// Ignore the flag if it's not in our intended group
-				if !strings.EqualFold(data.group, group.name) {
+				if data.group == "" {
+					dataHash := data.Hash()
+					if _, ok := hashes[dataHash]; ok {
+						return // Don't print the value if printed previously
+					}
+					hashes[dataHash] = struct{}{}
+
+					currentFlag := flag.CommandLine.Lookup(key)
+					otherOptions = append(otherOptions, createUsageString(data, currentFlag))
 					return
 				}
-
-				currentFlag := flag.CommandLine.Lookup(key)
-
+				// Ignore the flag if it's not in our intended group
+				if !strings.EqualFold(data.group, group.name)  {
+					return
+				}
 				dataHash := data.Hash()
 				if _, ok := hashes[dataHash]; ok {
 					return // Don't print the value if printed previously
 				}
 				hashes[dataHash] = struct{}{}
 
+				currentFlag := flag.CommandLine.Lookup(key)
 				result := createUsageString(data, currentFlag)
 				fmt.Fprint(writer, result, "\n")
-				writer.Flush()
 			})
+			writer.Flush()
 			fmt.Printf("\n")
+		}
+		if len(otherOptions) > 0 {
+			fmt.Fprintf(cliOutput, "%s:\n", strings.ToUpper("other options"))
+
+			for _, option := range otherOptions {
+				fmt.Fprint(writer, option, "\n")
+			}
+			writer.Flush()
 		}
 	} else {
 		flagSet.flagKeys.forEach(func(key string, data *FlagData) {
