@@ -291,52 +291,6 @@ func (flagSet *FlagSet) IntVar(field *int, long string, defaultValue int, usage 
 	flagSet.flagKeys.Set(long, flagData)
 }
 
-func (flagSet *FlagSet) SeverityVarP(field *Severities, long, short string, defaultValue []Severity, usage string) {
-	for _, item := range defaultValue {
-		_ = field.Set(item.String())
-	}
-
-	flag.Var(field, short, usage)
-	flag.Var(field, long, usage)
-
-	flagData := &flagData{
-		usage:        usage,
-		short:        short,
-		long:         long,
-		defaultValue: flagSet.createSeverityDefaultValues(field),
-	}
-	flagSet.flagKeys.Set(short, flagData)
-	flagSet.flagKeys.Set(long, flagData)
-}
-
-func (flagSet *FlagSet) createSeverityDefaultValues(field *Severities) string {
-	defaultBuilder := &strings.Builder{}
-	defaultBuilder.WriteString("[")
-	for i, k := range *field {
-		defaultBuilder.WriteString(k.String())
-		if i != len(*field)-1 {
-			defaultBuilder.WriteString(", ")
-		}
-	}
-	defaultBuilder.WriteString("]")
-	return defaultBuilder.String()
-}
-
-func (flagSet *FlagSet) SeverityVar(field *Severities, long string, defaultValue []Severity, usage string) {
-	for _, item := range defaultValue {
-		_ = field.Set(item.String())
-	}
-
-	flag.Var(field, long, usage)
-
-	flagData := &flagData{
-		usage:        usage,
-		long:         long,
-		defaultValue: flagSet.createSeverityDefaultValues(field),
-	}
-	flagSet.flagKeys.Set(long, flagData)
-}
-
 // StringSliceVarP adds a string slice flag with a shortname and longname
 func (flagSet *FlagSet) StringSliceVarP(field *StringSlice, long, short string, defaultValue []string, usage string) {
 	for _, item := range defaultValue {
@@ -443,14 +397,22 @@ func createUsageDefaultValue(data *flagData, currentFlag *flag.Flag, valueType r
 
 func createUsageTypeAndDescription(currentFlag *flag.Flag, valueType reflect.Type) string {
 	var result string
+
 	flagDisplayType, usage := flag.UnquoteUsage(currentFlag)
 	if len(flagDisplayType) > 0 {
-		if flagDisplayType == "value" {
-			switch valueType {
-			case reflect.TypeOf((*StringSlice)(nil)):
-				flagDisplayType = "string[]"
-			case reflect.TypeOf((*Severities)(nil)):
-				flagDisplayType = "severity[]"
+		if flagDisplayType == "value" { // hardcoded in the goflags library
+			switch valueType.Kind() {
+			case reflect.Ptr:
+				pointerTypeElement := valueType.Elem()
+				switch pointerTypeElement.Kind() {
+				case reflect.Slice, reflect.Array:
+					switch pointerTypeElement.Elem().Kind() {
+					case reflect.String:
+						flagDisplayType = "string[]"
+					default:
+						flagDisplayType = "value[]"
+					}
+				}
 			}
 		}
 		result += " " + flagDisplayType

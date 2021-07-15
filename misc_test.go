@@ -23,7 +23,7 @@ func Test_toStringSlice(t *testing.T) {
 	}
 	for input, expectedValue := range values {
 		t.Run(input, func(t *testing.T) {
-			slice, err := toStringSlice(input)
+			slice, err := ToStringSlice(input)
 			if expectedValue == nil {
 				if err == nil {
 					t.Fail()

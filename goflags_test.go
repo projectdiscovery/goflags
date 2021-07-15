@@ -2,11 +2,12 @@ package goflags
 
 import (
 	"flag"
-	"fmt"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"os"
+	"reflect"
 	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -22,20 +23,14 @@ func TestGenerateDefaultConfig(t *testing.T) {
 #test: test-default-value
 
 # string slice flag example value
-#slice: ["item1", "item2"]
-
-# severity flag example
-#severity: [info, low, medium, high, critical]`
+#slice: ["item1", "item2"]`
 
 	var data string
 	var data2 StringSlice
-	var severity Severities
 	flagSet.StringVar(&data, "test", "test-default-value", "Default value for a test flag example")
 	flagSet.StringSliceVar(&data2, "slice", []string{"item1", "item2"}, "String slice flag example value")
-	flagSet.SeverityVar(&severity, "severity", GetSupportedSeverities(), "Severity flag example")
 	generatedConfig := string(flagSet.generateDefaultConfig())
-	fmt.Println(generatedConfig)
-	require.Equal(t, example, generatedConfig, "could not get correct default config")
+	require.Equal(t, example, generatedConfig, "Could not get correct default config.")
 
 	tearDown(t.Name())
 }
@@ -46,13 +41,11 @@ func TestConfigFileDataTypes(t *testing.T) {
 	var data2 StringSlice
 	var data3 int
 	var data4 bool
-	var data5 Severities
 
 	flagSet.StringVar(&data, "string-value", "", "Default value for a test flag example")
 	flagSet.StringSliceVar(&data2, "slice-value", []string{}, "String slice flag example value")
 	flagSet.IntVar(&data3, "int-value", 0, "Int value example")
 	flagSet.BoolVar(&data4, "bool-value", false, "Bool value example")
-	flagSet.SeverityVarP(&data5, "sv", "severity", []Severity{}, "String slice flag example value")
 
 	configFileData := `
 string-value: test
@@ -75,7 +68,6 @@ bool-value: true`
 	require.Equal(t, StringSlice{"test", "test2"}, data2, "could not get correct string slice")
 	require.Equal(t, 543, data3, "could not get correct int")
 	require.Equal(t, true, data4, "could not get correct bool")
-	require.Equal(t, Severities{Info, High}, data5, "could not get correct severities")
 
 	tearDown(t.Name())
 }
@@ -88,8 +80,6 @@ func TestUsageOrder(t *testing.T) {
 	var stringSliceData2 StringSlice
 	var intData int
 	var boolData bool
-	var severities Severities
-	var severities2 Severities
 
 	flagSet.StringVar(&stringData, "string-value", "", "String example value example")
 	flagSet.StringVarP(&stringData, "", "ts2", "test-string", "String with default value example #2")
@@ -107,10 +97,9 @@ func TestUsageOrder(t *testing.T) {
 	flagSet.BoolVarP(&boolData, "bool-value2", "bv", false, "Bool value example #2")
 	flagSet.BoolVar(&boolData, "bool-with-default-value", true, "Bool with default value example")
 	flagSet.BoolVarP(&boolData, "bool-with-default-value2", "bwdv", true, "Bool with default value example #2")
-	flagSet.SeverityVar(&severities, "severity", GetSupportedSeverities(), "Severity example")
-	flagSet.SeverityVarP(&severities2, "severity2", "sev", GetSupportedSeverities(), "Severity example #2")
 
 	flagSet.usageFunc()
+	// TODO try to retrieve the data written to the stdout/err and do some assertions on it
 
 	tearDown(t.Name())
 }
@@ -156,6 +145,23 @@ func TestIncorrectFlagsCausePanic(t *testing.T) {
 				flagSet.usageFunc()
 			})
 		})
+	}
+}
+
+type testSliceValue []interface{}
+
+func (value testSliceValue) String() string   { return "" }
+func (value testSliceValue) Set(string) error { return nil }
+
+func TestMe(t *testing.T) {
+	testCases := map[string]flag.Flag{
+		"string[]": {Value: &StringSlice{}},
+		"value[]":  {Value: &testSliceValue{}},
+	}
+
+	for expected, currentFlag := range testCases {
+		result := createUsageTypeAndDescription(&currentFlag, reflect.TypeOf(currentFlag.Value))
+		assert.Equal(t, expected, strings.TrimSpace(result))
 	}
 }
 
