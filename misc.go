@@ -64,14 +64,16 @@ func (severities *Severities) ToStringArray() []string {
 var multiValueValidator = regexp.MustCompile("('[^',]+?,.*?')|(\"[^\",]+?,.*?\")|(`[^,]+?,.*?`)")
 
 func toStringSlice(value string) ([]string, error) {
-	var result []string
-
 	if multiValueValidator.FindString(value) != "" {
 		return nil, errors.New("Supported values are: value1,value2 etc")
 	}
 
+	value = strings.ToLower(value)
+
+	var result []string
 	if strings.Contains(value, ",") {
 		slices := strings.Split(value, ",")
+		result = make([]string, len(slices))
 		for _, slice := range slices {
 			result = append(result, strings.TrimSpace(strings.Trim(strings.TrimSpace(slice), "\"'`")))
 		}
