@@ -369,6 +369,9 @@ func (stringSlice *StringSlice) createStringArrayDefaultValue() string {
 	return defaultBuilder.String()
 }
 
+// OtherOptionsGroupName is the name for all flags not in a group
+var OtherOptionsGroupName = "other options"
+
 func (flagSet *FlagSet) usageFunc() {
 	hashes := make(map[string]struct{})
 
@@ -415,7 +418,7 @@ func (flagSet *FlagSet) usageFunc() {
 			fmt.Printf("\n")
 		}
 		if len(otherOptions) > 0 {
-			fmt.Fprintf(cliOutput, "%s:\n", strings.ToUpper("other options"))
+			fmt.Fprintf(cliOutput, "%s:\n", strings.ToUpper(OtherOptionsGroupName))
 
 			for _, option := range otherOptions {
 				fmt.Fprint(writer, option, "\n")
