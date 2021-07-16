@@ -5,6 +5,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"os"
+	"reflect"
 	"strconv"
 	"strings"
 	"testing"
@@ -27,10 +28,8 @@ func TestGenerateDefaultConfig(t *testing.T) {
 	var data2 StringSlice
 	flagSet.StringVar(&data, "test", "test-default-value", "Default value for a test flag example")
 	flagSet.StringSliceVar(&data2, "slice", []string{"item1", "item2"}, "String slice flag example value")
-	defaultConfig := string(flagSet.generateDefaultConfig())
-	parts := strings.SplitN(defaultConfig, "\n", 2)
-
-	require.Equal(t, example, parts[1], "could not get correct default config")
+	generatedConfig := string(flagSet.generateDefaultConfig())
+	require.Equal(t, example, generatedConfig, "Could not get correct default config.")
 
 	tearDown(t.Name())
 }
@@ -52,11 +51,14 @@ string-value: test
 slice-value:
  - test
  - test2
+severity:
+ - info
+ - high
 int-value: 543
 bool-value: true`
 	err := ioutil.WriteFile("test.yaml", []byte(configFileData), os.ModePerm)
 	require.Nil(t, err, "could not write temporary config")
-	defer os.Remove("test.yaml")
+	//defer os.Remove("test.yaml")
 
 	err = flagSet.MergeConfigFile("test.yaml")
 	require.Nil(t, err, "could not merge temporary config")
@@ -96,6 +98,7 @@ func TestUsageOrder(t *testing.T) {
 	flagSet.BoolVarP(&boolData, "bool-with-default-value2", "bwdv", true, "Bool with default value example #2")
 
 	flagSet.usageFunc()
+	// TODO try to retrieve the data written to the stdout/err and do some assertions on it
 
 	tearDown(t.Name())
 }
@@ -141,6 +144,23 @@ func TestIncorrectFlagsCausePanic(t *testing.T) {
 				flagSet.usageFunc()
 			})
 		})
+	}
+}
+
+type testSliceValue []interface{}
+
+func (value testSliceValue) String() string   { return "" }
+func (value testSliceValue) Set(string) error { return nil }
+
+func TestMe(t *testing.T) {
+	testCases := map[string]flag.Flag{
+		"string[]": {Value: &StringSlice{}},
+		"value[]":  {Value: &testSliceValue{}},
+	}
+
+	for expected, currentFlag := range testCases {
+		result := createUsageTypeAndDescription(&currentFlag, reflect.TypeOf(currentFlag.Value))
+		assert.Equal(t, expected, strings.TrimSpace(result))
 	}
 }
 

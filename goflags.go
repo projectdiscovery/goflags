@@ -326,23 +326,11 @@ func (flagSet *FlagSet) StringSliceVarP(field *StringSlice, long, short string, 
 	flag.Var(field, short, usage)
 	flag.Var(field, long, usage)
 
-	defaultBuilder := &strings.Builder{}
-	defaultBuilder.WriteString("[")
-	for i, k := range *field {
-		defaultBuilder.WriteString("\"")
-		defaultBuilder.WriteString(k)
-		defaultBuilder.WriteString("\"")
-		if i != len(*field)-1 {
-			defaultBuilder.WriteString(", ")
-		}
-	}
-	defaultBuilder.WriteString("]")
-
-	flagData := &FlagData{
+	flagData := &flagData{
 		usage:        usage,
 		short:        short,
 		long:         long,
-		defaultValue: defaultBuilder.String(),
+		defaultValue: field.createStringArrayDefaultValue(),
 	}
 	flagSet.flagKeys.Set(short, flagData)
 	flagSet.flagKeys.Set(long, flagData)
@@ -355,27 +343,29 @@ func (flagSet *FlagSet) StringSliceVar(field *StringSlice, long string, defaultV
 		_ = field.Set(item)
 	}
 
+	flag.Var(field, long, usage)
+
+	flagData := &flagData{
+		usage:        usage,
+		long:         long,
+		defaultValue: field.createStringArrayDefaultValue(),
+	}
+	flagSet.flagKeys.Set(long, flagData)
+}
+
+func (stringSlice *StringSlice) createStringArrayDefaultValue() string {
 	defaultBuilder := &strings.Builder{}
 	defaultBuilder.WriteString("[")
-	for i, k := range *field {
+	for i, k := range *stringSlice {
 		defaultBuilder.WriteString("\"")
 		defaultBuilder.WriteString(k)
 		defaultBuilder.WriteString("\"")
-		if i != len(*field)-1 {
+		if i != len(*stringSlice)-1 {
 			defaultBuilder.WriteString(", ")
 		}
 	}
 	defaultBuilder.WriteString("]")
-
-	flag.Var(field, long, usage)
-
-	flagData := &FlagData{
-		usage:        usage,
-		long:         long,
-		defaultValue: defaultBuilder.String(),
-	}
-	flagSet.flagKeys.Set(long, flagData)
-	return flagData
+	return defaultBuilder.String()
 }
 
 func (flagSet *FlagSet) usageFunc() {
@@ -479,12 +469,22 @@ func createUsageDefaultValue(data *FlagData, currentFlag *flag.Flag, valueType r
 
 func createUsageTypeAndDescription(currentFlag *flag.Flag, valueType reflect.Type) string {
 	var result string
+
 	flagDisplayType, usage := flag.UnquoteUsage(currentFlag)
 	if len(flagDisplayType) > 0 {
-		if flagDisplayType == "value" {
-			var stringSlicePointerType *StringSlice
-			if valueType == reflect.TypeOf(stringSlicePointerType) { // refactor safe check
-				flagDisplayType = "string[]"
+		if flagDisplayType == "value" { // hardcoded in the goflags library
+			switch valueType.Kind() {
+			case reflect.Ptr:
+				pointerTypeElement := valueType.Elem()
+				switch pointerTypeElement.Kind() {
+				case reflect.Slice, reflect.Array:
+					switch pointerTypeElement.Elem().Kind() {
+					case reflect.String:
+						flagDisplayType = "string[]"
+					default:
+						flagDisplayType = "value[]"
+					}
+				}
 			}
 		}
 		result += " " + flagDisplayType
