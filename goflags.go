@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path"
@@ -24,6 +25,9 @@ type FlagSet struct {
 	description string
 	flagKeys    InsertionOrderedMap
 	groups      []groupData
+
+	// OtherOptionsGroupName is the name for all flags not in a group
+	OtherOptionsGroupName string
 }
 
 type groupData struct {
@@ -40,13 +44,13 @@ type FlagData struct {
 }
 
 // Group sets the group for a flag data
-func (f *FlagData) Group(name string) {
-	f.group = name
+func (flagData *FlagData) Group(name string) {
+	flagData.group = name
 }
 
 // NewFlagSet creates a new flagSet structure for the application
 func NewFlagSet() *FlagSet {
-	return &FlagSet{flagKeys: *newInsertionOrderedMap()}
+	return &FlagSet{flagKeys: *newInsertionOrderedMap(), OtherOptionsGroupName: "other options"}
 }
 
 func newInsertionOrderedMap() *InsertionOrderedMap {
@@ -58,8 +62,8 @@ func newInsertionOrderedMap() *InsertionOrderedMap {
 
 // Hash returns the unique hash for a flagData structure
 // NOTE: Hash panics when the structure cannot be hashed.
-func (f *FlagData) Hash() string {
-	hash, _ := structhash.Hash(f, 1)
+func (flagData *FlagData) Hash() string {
+	hash, _ := structhash.Hash(flagData, 1)
 	return hash
 }
 
@@ -369,12 +373,7 @@ func (stringSlice *StringSlice) createStringArrayDefaultValue() string {
 	return defaultBuilder.String()
 }
 
-// OtherOptionsGroupName is the name for all flags not in a group
-var OtherOptionsGroupName = "other options"
-
 func (flagSet *FlagSet) usageFunc() {
-	hashes := make(map[string]struct{})
-
 	cliOutput := flag.CommandLine.Output()
 	fmt.Fprintf(cliOutput, "%s\n\n", flagSet.description)
 	fmt.Fprintf(cliOutput, "Usage:\n  %s [flags]\n\n", os.Args[0])
@@ -383,63 +382,87 @@ func (flagSet *FlagSet) usageFunc() {
 	writer := tabwriter.NewWriter(cliOutput, 0, 0, 1, ' ', 0)
 
 	if len(flagSet.groups) > 0 {
-		var otherOptions []string
-
-		for _, group := range flagSet.groups {
-			fmt.Fprintf(cliOutput, "%s:\n", strings.ToUpper(group.description))
-
-			flagSet.flagKeys.forEach(func(key string, data *FlagData) {
-				if data.group == "" {
-					dataHash := data.Hash()
-					if _, ok := hashes[dataHash]; ok {
-						return // Don't print the value if printed previously
-					}
-					hashes[dataHash] = struct{}{}
-
-					currentFlag := flag.CommandLine.Lookup(key)
-					otherOptions = append(otherOptions, createUsageString(data, currentFlag))
-					return
-				}
-				// Ignore the flag if it's not in our intended group
-				if !strings.EqualFold(data.group, group.name) {
-					return
-				}
-				dataHash := data.Hash()
-				if _, ok := hashes[dataHash]; ok {
-					return // Don't print the value if printed previously
-				}
-				hashes[dataHash] = struct{}{}
-
-				currentFlag := flag.CommandLine.Lookup(key)
-				result := createUsageString(data, currentFlag)
-				fmt.Fprint(writer, result, "\n")
-			})
-			writer.Flush()
-			fmt.Printf("\n")
-		}
-		if len(otherOptions) > 0 {
-			fmt.Fprintf(cliOutput, "%s:\n", strings.ToUpper(OtherOptionsGroupName))
-
-			for _, option := range otherOptions {
-				fmt.Fprint(writer, option, "\n")
-			}
-			writer.Flush()
-		}
+		flagSet.usageFuncForGroups(cliOutput, writer)
 	} else {
+		flagSet.usageFuncInternal(cliOutput, writer)
+	}
+}
+
+// usageFuncInternal prints usage for command line flags
+func (flagSet *FlagSet) usageFuncInternal(cliOutput io.Writer, writer *tabwriter.Writer) {
+	uniqueIterator := newUniqueFlagIterator()
+
+	flagSet.flagKeys.forEach(func(key string, data *FlagData) {
+		currentFlag := flag.CommandLine.Lookup(key)
+
+		if !uniqueIterator.validate(data) {
+			return
+		}
+		result := createUsageString(data, currentFlag)
+		fmt.Fprint(writer, result, "\n")
+	})
+	writer.Flush()
+}
+
+// usageFuncForGroups prints usage for command line flags with grouping enabled
+func (flagSet *FlagSet) usageFuncForGroups(cliOutput io.Writer, writer *tabwriter.Writer) {
+	uniqueIterator := newUniqueFlagIterator()
+
+	var otherOptions []string
+	for _, group := range flagSet.groups {
+		fmt.Fprintf(cliOutput, "%s:\n", normalizeGroupDescription(group.description))
+
 		flagSet.flagKeys.forEach(func(key string, data *FlagData) {
-			currentFlag := flag.CommandLine.Lookup(key)
-
-			dataHash := data.Hash()
-			if _, ok := hashes[dataHash]; ok {
-				return // Don't print the value if printed previously
+			if data.group == "" {
+				if !uniqueIterator.validate(data) {
+					return
+				}
+				currentFlag := flag.CommandLine.Lookup(key)
+				otherOptions = append(otherOptions, createUsageString(data, currentFlag))
+				return
 			}
-			hashes[dataHash] = struct{}{}
-
+			// Ignore the flag if it's not in our intended group
+			if !strings.EqualFold(data.group, group.name) {
+				return
+			}
+			if !uniqueIterator.validate(data) {
+				return
+			}
+			currentFlag := flag.CommandLine.Lookup(key)
 			result := createUsageString(data, currentFlag)
 			fmt.Fprint(writer, result, "\n")
 		})
 		writer.Flush()
+		fmt.Printf("\n")
 	}
+
+	// Print Any additional flag that may have been left
+	if len(otherOptions) > 0 {
+		fmt.Fprintf(cliOutput, "%s:\n", normalizeGroupDescription(flagSet.OtherOptionsGroupName))
+
+		for _, option := range otherOptions {
+			fmt.Fprint(writer, option, "\n")
+		}
+		writer.Flush()
+	}
+}
+
+type uniqueFlagIterator struct {
+	hashes map[string]interface{}
+}
+
+func newUniqueFlagIterator() *uniqueFlagIterator {
+	return &uniqueFlagIterator{hashes: make(map[string]interface{})}
+}
+
+// validate returns true if the flag is unique during iteration
+func (u *uniqueFlagIterator) validate(data *FlagData) bool {
+	dataHash := data.Hash()
+	if _, ok := u.hashes[dataHash]; ok {
+		return false // Don't print the value if printed previously
+	}
+	u.hashes[dataHash] = struct{}{}
+	return true
 }
 
 func isNotBlank(value string) bool {
@@ -534,4 +557,9 @@ func isZeroValue(f *flag.Flag, value string) bool {
 		zeroValue = reflect.Zero(valueType)
 	}
 	return value == zeroValue.Interface().(flag.Value).String()
+}
+
+// normalizeGroupDescription returns normalized description field for group
+func normalizeGroupDescription(description string) string {
+	return strings.ToUpper(description)
 }
