@@ -2,13 +2,14 @@ package goflags
 
 import (
 	"flag"
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"os"
 	"reflect"
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 
 	"github.com/stretchr/testify/require"
 )
@@ -28,9 +29,10 @@ func TestGenerateDefaultConfig(t *testing.T) {
 	var data2 StringSlice
 	flagSet.StringVar(&data, "test", "test-default-value", "Default value for a test flag example")
 	flagSet.StringSliceVar(&data2, "slice", []string{"item1", "item2"}, "String slice flag example value")
-	generatedConfig := string(flagSet.generateDefaultConfig())
-	require.Equal(t, example, generatedConfig, "Could not get correct default config.")
+	defaultConfig := string(flagSet.generateDefaultConfig())
+	parts := strings.SplitN(defaultConfig, "\n", 2)
 
+	require.Equal(t, example, parts[1], "could not get correct default config")
 	tearDown(t.Name())
 }
 

@@ -27,7 +27,7 @@ type FlagSet struct {
 }
 
 type groupData struct {
-	name string
+	name        string
 	description string
 }
 
@@ -326,7 +326,7 @@ func (flagSet *FlagSet) StringSliceVarP(field *StringSlice, long, short string, 
 	flag.Var(field, short, usage)
 	flag.Var(field, long, usage)
 
-	flagData := &flagData{
+	flagData := &FlagData{
 		usage:        usage,
 		short:        short,
 		long:         long,
@@ -345,12 +345,13 @@ func (flagSet *FlagSet) StringSliceVar(field *StringSlice, long string, defaultV
 
 	flag.Var(field, long, usage)
 
-	flagData := &flagData{
+	flagData := &FlagData{
 		usage:        usage,
 		long:         long,
 		defaultValue: field.createStringArrayDefaultValue(),
 	}
 	flagSet.flagKeys.Set(long, flagData)
+	return flagData
 }
 
 func (stringSlice *StringSlice) createStringArrayDefaultValue() string {
@@ -397,7 +398,7 @@ func (flagSet *FlagSet) usageFunc() {
 					return
 				}
 				// Ignore the flag if it's not in our intended group
-				if !strings.EqualFold(data.group, group.name)  {
+				if !strings.EqualFold(data.group, group.name) {
 					return
 				}
 				dataHash := data.Hash()
