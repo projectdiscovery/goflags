@@ -384,18 +384,18 @@ func (flagSet *FlagSet) usageFunc() {
 	if len(flagSet.groups) > 0 {
 		flagSet.usageFuncForGroups(cliOutput, writer)
 	} else {
-		flagSet.usageFuncInternal(cliOutput, writer)
+		flagSet.usageFuncInternal(writer)
 	}
 }
 
 // usageFuncInternal prints usage for command line flags
-func (flagSet *FlagSet) usageFuncInternal(cliOutput io.Writer, writer *tabwriter.Writer) {
-	uniqueIterator := newUniqueFlagIterator()
+func (flagSet *FlagSet) usageFuncInternal(writer *tabwriter.Writer) {
+	uniqueDeduper := newUniqueDeduper()
 
 	flagSet.flagKeys.forEach(func(key string, data *FlagData) {
 		currentFlag := flag.CommandLine.Lookup(key)
 
-		if !uniqueIterator.validate(data) {
+		if !uniqueDeduper.isUnique(data) {
 			return
 		}
 		result := createUsageString(data, currentFlag)
@@ -406,18 +406,19 @@ func (flagSet *FlagSet) usageFuncInternal(cliOutput io.Writer, writer *tabwriter
 
 // usageFuncForGroups prints usage for command line flags with grouping enabled
 func (flagSet *FlagSet) usageFuncForGroups(cliOutput io.Writer, writer *tabwriter.Writer) {
-	uniqueIterator := newUniqueFlagIterator()
+	uniqueDeduper := newUniqueDeduper()
 
 	var otherOptions []string
 	for _, group := range flagSet.groups {
 		fmt.Fprintf(cliOutput, "%s:\n", normalizeGroupDescription(group.description))
 
 		flagSet.flagKeys.forEach(func(key string, data *FlagData) {
+			currentFlag := flag.CommandLine.Lookup(key)
+
 			if data.group == "" {
-				if !uniqueIterator.validate(data) {
+				if !uniqueDeduper.isUnique(data) {
 					return
 				}
-				currentFlag := flag.CommandLine.Lookup(key)
 				otherOptions = append(otherOptions, createUsageString(data, currentFlag))
 				return
 			}
@@ -425,10 +426,9 @@ func (flagSet *FlagSet) usageFuncForGroups(cliOutput io.Writer, writer *tabwrite
 			if !strings.EqualFold(data.group, group.name) {
 				return
 			}
-			if !uniqueIterator.validate(data) {
+			if !uniqueDeduper.isUnique(data) {
 				return
 			}
-			currentFlag := flag.CommandLine.Lookup(key)
 			result := createUsageString(data, currentFlag)
 			fmt.Fprint(writer, result, "\n")
 		})
@@ -447,16 +447,16 @@ func (flagSet *FlagSet) usageFuncForGroups(cliOutput io.Writer, writer *tabwrite
 	}
 }
 
-type uniqueFlagIterator struct {
+type uniqueDeduper struct {
 	hashes map[string]interface{}
 }
 
-func newUniqueFlagIterator() *uniqueFlagIterator {
-	return &uniqueFlagIterator{hashes: make(map[string]interface{})}
+func newUniqueDeduper() *uniqueDeduper {
+	return &uniqueDeduper{hashes: make(map[string]interface{})}
 }
 
-// validate returns true if the flag is unique during iteration
-func (u *uniqueFlagIterator) validate(data *FlagData) bool {
+// isUnique returns true if the flag is unique during iteration
+func (u *uniqueDeduper) isUnique(data *FlagData) bool {
 	dataHash := data.Hash()
 	if _, ok := u.hashes[dataHash]; ok {
 		return false // Don't print the value if printed previously
