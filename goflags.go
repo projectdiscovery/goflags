@@ -322,7 +322,7 @@ func (flagSet *FlagSet) IntVar(field *int, long string, defaultValue int, usage 
 }
 
 // StringSliceVarP adds a string slice flag with a shortname and longname
-func (flagSet *FlagSet) StringSliceVarP(field *StringSlice, long, short string, defaultValue []string, usage string) *FlagData {
+func (flagSet *FlagSet) StringSliceRawVarP(field *StringSlice, long, short string, defaultValue []string, usage string) *FlagData {
 	for _, item := range defaultValue {
 		_ = field.Set(item)
 	}
@@ -342,7 +342,7 @@ func (flagSet *FlagSet) StringSliceVarP(field *StringSlice, long, short string, 
 }
 
 // StringSliceVar adds a string slice flag with a longname
-func (flagSet *FlagSet) StringSliceVar(field *StringSlice, long string, defaultValue []string, usage string) *FlagData {
+func (flagSet *FlagSet) StringSliceRawVar(field *StringSlice, long string, defaultValue []string, usage string) *FlagData {
 	for _, item := range defaultValue {
 		_ = field.Set(item)
 	}
@@ -361,7 +361,7 @@ func (flagSet *FlagSet) StringSliceVar(field *StringSlice, long string, defaultV
 // PathSliceVar adds a path string slice flag with a longname
 func (flagSet *FlagSet) PathSliceVar(field *StringSlice, long string, defaultValue []string, usage string) *FlagData {
 	for _, item := range defaultValue {
-		_ = field.Set(item)
+		_ = field.SetWithSplit(item)
 	}
 
 	flag.Var(field, long, usage)
@@ -378,7 +378,7 @@ func (flagSet *FlagSet) PathSliceVar(field *StringSlice, long string, defaultVal
 // StringSliceVarP adds a path string slice flag with a shortname and longname
 func (flagSet *FlagSet) PathSliceVarP(field *StringSlice, long, short string, defaultValue []string, usage string) *FlagData {
 	for _, item := range defaultValue {
-		_ = field.Set(item)
+		_ = field.SetWithSplit(item)
 	}
 
 	flag.Var(field, short, usage)
@@ -391,6 +391,43 @@ func (flagSet *FlagSet) PathSliceVarP(field *StringSlice, long, short string, de
 		defaultValue: field.createStringArrayDefaultValue(),
 	}
 	flagSet.flagKeys.Set(short, flagData)
+	flagSet.flagKeys.Set(long, flagData)
+	return flagData
+}
+
+// StringSliceVarP adds a string slice flag with a shortname and longname
+func (flagSet *FlagSet) StringSliceVarP(field *StringSlice, long, short string, defaultValue []string, usage string) *FlagData {
+	for _, item := range defaultValue {
+		_ = field.SetWithSplitToLower(item)
+	}
+
+	flag.Var(field, short, usage)
+	flag.Var(field, long, usage)
+
+	flagData := &FlagData{
+		usage:        usage,
+		short:        short,
+		long:         long,
+		defaultValue: field.createStringArrayDefaultValue(),
+	}
+	flagSet.flagKeys.Set(short, flagData)
+	flagSet.flagKeys.Set(long, flagData)
+	return flagData
+}
+
+// StringSliceVar adds a string slice flag with a longname
+func (flagSet *FlagSet) StringSliceVar(field *StringSlice, long string, defaultValue []string, usage string) *FlagData {
+	for _, item := range defaultValue {
+		_ = field.SetWithSplitToLower(item)
+	}
+
+	flag.Var(field, long, usage)
+
+	flagData := &FlagData{
+		usage:        usage,
+		long:         long,
+		defaultValue: field.createStringArrayDefaultValue(),
+	}
 	flagSet.flagKeys.Set(long, flagData)
 	return flagData
 }
