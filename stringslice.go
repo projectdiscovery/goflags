@@ -24,15 +24,18 @@ func (stringSlice *StringSlice) Set(value string) error {
 	}
 }
 
-var multiValueValidator = regexp.MustCompile("('[^',]+?,.*?')|(\"[^\",]+?,.*?\")|(`[^,]+?,.*?`)")
-
-func ToStringSliceLower(value string) ([]string, error) {
-	result, err := ToStringSlice(value)
-	if err != nil {
-		return nil, err
+// SetI appends a value to the string slice converting it to lowercase
+func (stringSlice *StringSlice) SetToLower(value string) error {
+	if slice, err := ToStringSlice(value); err != nil {
+		return err
+	} else {
+		slice = sliceToLower(slice)
+		*stringSlice = append(*stringSlice, slice...)
+		return nil
 	}
-	return sliceToLower(result), nil
 }
+
+var multiValueValidator = regexp.MustCompile("('[^',]+?,.*?')|(\"[^\",]+?,.*?\")|(`[^,]+?,.*?`)")
 
 func ToStringSlice(value string) ([]string, error) {
 	if multiValueValidator.FindString(value) != "" {
