@@ -1,9 +1,10 @@
 package goflags
 
 import (
-	"github.com/pkg/errors"
 	"regexp"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
 // StringSlice is a slice of strings
@@ -25,12 +26,18 @@ func (stringSlice *StringSlice) Set(value string) error {
 
 var multiValueValidator = regexp.MustCompile("('[^',]+?,.*?')|(\"[^\",]+?,.*?\")|(`[^,]+?,.*?`)")
 
+func ToStringSliceLower(value string) ([]string, error) {
+	result, err := ToStringSlice(value)
+	if err != nil {
+		return nil, err
+	}
+	return sliceToLower(result), nil
+}
+
 func ToStringSlice(value string) ([]string, error) {
 	if multiValueValidator.FindString(value) != "" {
 		return nil, errors.New("Supported values are: value1,value2 etc")
 	}
-
-	value = strings.ToLower(value)
 
 	var result []string
 	if strings.Contains(value, ",") {
@@ -43,4 +50,11 @@ func ToStringSlice(value string) ([]string, error) {
 		result = []string{value}
 	}
 	return result, nil
+}
+
+func sliceToLower(values []string) []string {
+	for i := range values {
+		values[i] = strings.ToLower(values[i])
+	}
+	return values
 }
