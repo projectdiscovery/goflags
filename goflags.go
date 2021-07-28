@@ -321,6 +321,43 @@ func (flagSet *FlagSet) IntVar(field *int, long string, defaultValue int, usage 
 	return flagData
 }
 
+// NormalizedStringSliceVarP adds a path slice flag with a shortname and longname
+func (flagSet *FlagSet) NormalizedStringSliceVarP(field *NormalizedStringSlice, long, short string, defaultValue []string, usage string) *FlagData {
+	for _, item := range defaultValue {
+		_ = field.Set(item)
+	}
+
+	flag.Var(field, short, usage)
+	flag.Var(field, long, usage)
+
+	flagData := &FlagData{
+		usage:        usage,
+		short:        short,
+		long:         long,
+		defaultValue: field.createStringArrayDefaultValue(),
+	}
+	flagSet.flagKeys.Set(short, flagData)
+	flagSet.flagKeys.Set(long, flagData)
+	return flagData
+}
+
+// NormalizedStringSliceVar adds a path slice flag with a long name
+func (flagSet *FlagSet) NormalizedStringSliceVar(field *NormalizedStringSlice, long string, defaultValue []string, usage string) *FlagData {
+	for _, item := range defaultValue {
+		_ = field.Set(item)
+	}
+
+	flag.Var(field, long, usage)
+
+	flagData := &FlagData{
+		usage:        usage,
+		long:         long,
+		defaultValue: field.createStringArrayDefaultValue(),
+	}
+	flagSet.flagKeys.Set(long, flagData)
+	return flagData
+}
+
 // StringSliceVarP adds a string slice flag with a shortname and longname
 func (flagSet *FlagSet) StringSliceVarP(field *StringSlice, long, short string, defaultValue []string, usage string) *FlagData {
 	for _, item := range defaultValue {
@@ -356,21 +393,6 @@ func (flagSet *FlagSet) StringSliceVar(field *StringSlice, long string, defaultV
 	}
 	flagSet.flagKeys.Set(long, flagData)
 	return flagData
-}
-
-func (stringSlice *StringSlice) createStringArrayDefaultValue() string {
-	defaultBuilder := &strings.Builder{}
-	defaultBuilder.WriteString("[")
-	for i, k := range *stringSlice {
-		defaultBuilder.WriteString("\"")
-		defaultBuilder.WriteString(k)
-		defaultBuilder.WriteString("\"")
-		if i != len(*stringSlice)-1 {
-			defaultBuilder.WriteString(", ")
-		}
-	}
-	defaultBuilder.WriteString("]")
-	return defaultBuilder.String()
 }
 
 func (flagSet *FlagSet) usageFunc() {
