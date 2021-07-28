@@ -7,33 +7,45 @@ import (
 	"github.com/pkg/errors"
 )
 
-// StringSlice is a slice of strings
+// StringSliceRaw is a slice of strings
+type StringSliceRaw []string
+
+func (stringSlice *StringSliceRaw) String() string {
+	return strings.Join(*stringSlice, " ")
+}
+
+// Set appends a value to the string slice.
+func (stringSlice *StringSliceRaw) Set(value string) error {
+	*stringSlice = append(*stringSlice, value)
+	return nil
+}
+
 type StringSlice []string
 
 func (stringSlice *StringSlice) String() string {
 	return strings.Join(*stringSlice, " ")
 }
 
-// Set appends a value to the string slice.
-func (stringSlice *StringSlice) Set(value string) error {
-	*stringSlice = append(*stringSlice, value)
-	return nil
-}
-
-// SetI appends a value to the string slice converting it to
-func (stringSlice *StringSlice) SetWithSplitToLower(value string) error {
+// SetI appends a value to the string slice
+func (StringSlice *StringSlice) Set(value string) error {
 	value = strings.ToLower(value)
 	slice, err := ToStringSlice(value)
 	if err != nil {
 		return err
 	}
 
-	*stringSlice = append(*stringSlice, slice...)
+	*StringSlice = append(*StringSlice, slice...)
 	return nil
 }
 
+type PathSlice []string
+
+func (stringSlice *PathSlice) String() string {
+	return strings.Join(*stringSlice, " ")
+}
+
 // Set appends a value to the string slice.
-func (stringSlice *StringSlice) SetWithSplit(value string) error {
+func (stringSlice *PathSlice) Set(value string) error {
 	slice, err := ToStringSlice(value)
 	if err != nil {
 		return err
