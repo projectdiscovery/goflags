@@ -324,7 +324,7 @@ func (flagSet *FlagSet) IntVar(field *int, long string, defaultValue int, usage 
 // StringSliceVarP adds a string slice flag with a shortname and longname
 func (flagSet *FlagSet) StringSliceVarP(field *StringSlice, long, short string, defaultValue []string, usage string) *FlagData {
 	for _, item := range defaultValue {
-		_ = field.SetToLower(item)
+		_ = field.Set(item)
 	}
 
 	flag.Var(field, short, usage)
@@ -344,7 +344,7 @@ func (flagSet *FlagSet) StringSliceVarP(field *StringSlice, long, short string, 
 // StringSliceVar adds a string slice flag with a longname
 func (flagSet *FlagSet) StringSliceVar(field *StringSlice, long string, defaultValue []string, usage string) *FlagData {
 	for _, item := range defaultValue {
-		_ = field.SetToLower(item)
+		_ = field.Set(item)
 	}
 
 	flag.Var(field, long, usage)
