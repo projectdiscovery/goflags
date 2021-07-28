@@ -16,23 +16,31 @@ func (stringSlice *StringSlice) String() string {
 
 // Set appends a value to the string slice.
 func (stringSlice *StringSlice) Set(value string) error {
-	if slice, err := ToStringSlice(value); err != nil {
-		return err
-	} else {
-		*stringSlice = append(*stringSlice, slice...)
-		return nil
-	}
+	*stringSlice = append(*stringSlice, value)
+	return nil
 }
 
-// SetI appends a value to the string slice converting it to lowercase
-func (stringSlice *StringSlice) SetToLower(value string) error {
-	if slice, err := ToStringSlice(value); err != nil {
+// SetI appends a value to the string slice converting it to
+func (stringSlice *StringSlice) SetWithSplitToLower(value string) error {
+	value = strings.ToLower(value)
+	slice, err := ToStringSlice(value)
+	if err != nil {
 		return err
-	} else {
-		slice = sliceToLower(slice)
-		*stringSlice = append(*stringSlice, slice...)
-		return nil
 	}
+
+	*stringSlice = append(*stringSlice, slice...)
+	return nil
+}
+
+// Set appends a value to the string slice.
+func (stringSlice *StringSlice) SetWithSplit(value string) error {
+	slice, err := ToStringSlice(value)
+	if err != nil {
+		return err
+	}
+
+	*stringSlice = append(*stringSlice, slice...)
+	return nil
 }
 
 var multiValueValidator = regexp.MustCompile("('[^',]+?,.*?')|(\"[^\",]+?,.*?\")|(`[^,]+?,.*?`)")
@@ -42,22 +50,15 @@ func ToStringSlice(value string) ([]string, error) {
 		return nil, errors.New("Supported values are: value1,value2 etc")
 	}
 
-	var result []string
 	if strings.Contains(value, ",") {
+		var result []string
 		slices := strings.Split(value, ",")
 		result = make([]string, 0, len(slices))
 		for _, slice := range slices {
 			result = append(result, strings.TrimSpace(strings.Trim(strings.TrimSpace(slice), "\"'`")))
 		}
-	} else {
-		result = []string{value}
+		return result, nil
 	}
-	return result, nil
-}
 
-func sliceToLower(values []string) []string {
-	for i := range values {
-		values[i] = strings.ToLower(values[i])
-	}
-	return values
+	return []string{value}, nil
 }
