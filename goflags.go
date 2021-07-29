@@ -321,7 +321,48 @@ func (flagSet *FlagSet) IntVar(field *int, long string, defaultValue int, usage 
 	return flagData
 }
 
+// NormalizedStringSliceVarP adds a path slice flag with a shortname and longname.
+// It supports comma separated values, that are normalized (lower-cased, stripped of any leading and trailing whitespaces and quotes)
+func (flagSet *FlagSet) NormalizedStringSliceVarP(field *NormalizedStringSlice, long, short string, defaultValue []string, usage string) *FlagData {
+	for _, item := range defaultValue {
+		_ = field.Set(item)
+	}
+
+	flag.Var(field, short, usage)
+	flag.Var(field, long, usage)
+
+	flagData := &FlagData{
+		usage:        usage,
+		short:        short,
+		long:         long,
+		defaultValue: field.createStringArrayDefaultValue(),
+	}
+	flagSet.flagKeys.Set(short, flagData)
+	flagSet.flagKeys.Set(long, flagData)
+	return flagData
+}
+
+// NormalizedStringSliceVar adds a path slice flag with a long name
+// It supports comma separated values, that are normalized (lower-cased, stripped of any leading and trailing whitespaces and quotes)
+func (flagSet *FlagSet) NormalizedStringSliceVar(field *NormalizedStringSlice, long string, defaultValue []string, usage string) *FlagData {
+	for _, item := range defaultValue {
+		_ = field.Set(item)
+	}
+
+	flag.Var(field, long, usage)
+
+	flagData := &FlagData{
+		usage:        usage,
+		long:         long,
+		defaultValue: field.createStringArrayDefaultValue(),
+	}
+	flagSet.flagKeys.Set(long, flagData)
+	return flagData
+}
+
 // StringSliceVarP adds a string slice flag with a shortname and longname
+// Supports ONE value at a time. Adding multiple values require repeating the argument (-flag value1 -flag value2)
+// No value normalization is happening.
 func (flagSet *FlagSet) StringSliceVarP(field *StringSlice, long, short string, defaultValue []string, usage string) *FlagData {
 	for _, item := range defaultValue {
 		_ = field.Set(item)
@@ -342,6 +383,8 @@ func (flagSet *FlagSet) StringSliceVarP(field *StringSlice, long, short string, 
 }
 
 // StringSliceVar adds a string slice flag with a longname
+// Supports ONE value at a time. Adding multiple values require repeating the argument (-flag value1 -flag value2)
+// No value normalization is happening.
 func (flagSet *FlagSet) StringSliceVar(field *StringSlice, long string, defaultValue []string, usage string) *FlagData {
 	for _, item := range defaultValue {
 		_ = field.Set(item)
@@ -356,21 +399,6 @@ func (flagSet *FlagSet) StringSliceVar(field *StringSlice, long string, defaultV
 	}
 	flagSet.flagKeys.Set(long, flagData)
 	return flagData
-}
-
-func (stringSlice *StringSlice) createStringArrayDefaultValue() string {
-	defaultBuilder := &strings.Builder{}
-	defaultBuilder.WriteString("[")
-	for i, k := range *stringSlice {
-		defaultBuilder.WriteString("\"")
-		defaultBuilder.WriteString(k)
-		defaultBuilder.WriteString("\"")
-		if i != len(*stringSlice)-1 {
-			defaultBuilder.WriteString(", ")
-		}
-	}
-	defaultBuilder.WriteString("]")
-	return defaultBuilder.String()
 }
 
 func (flagSet *FlagSet) usageFunc() {
@@ -415,9 +443,8 @@ func (flagSet *FlagSet) usageFuncForGroups(cliOutput io.Writer, writer *tabwrite
 		flagSet.flagKeys.forEach(func(key string, data *FlagData) {
 			currentFlag := flag.CommandLine.Lookup(key)
 
-			isUnique := uniqueDeduper.isUnique(data)
 			if data.group == "" {
-				if !isUnique {
+				if !uniqueDeduper.isUnique(data) {
 					return
 				}
 				otherOptions = append(otherOptions, createUsageString(data, currentFlag))
@@ -427,7 +454,7 @@ func (flagSet *FlagSet) usageFuncForGroups(cliOutput io.Writer, writer *tabwrite
 			if !strings.EqualFold(data.group, group.name) {
 				return
 			}
-			if !isUnique {
+			if !uniqueDeduper.isUnique(data) {
 				return
 			}
 			result := createUsageString(data, currentFlag)
