@@ -443,9 +443,8 @@ func (flagSet *FlagSet) usageFuncForGroups(cliOutput io.Writer, writer *tabwrite
 		flagSet.flagKeys.forEach(func(key string, data *FlagData) {
 			currentFlag := flag.CommandLine.Lookup(key)
 
-			isUnique := uniqueDeduper.isUnique(data)
 			if data.group == "" {
-				if !isUnique {
+				if !uniqueDeduper.isUnique(data) {
 					return
 				}
 				otherOptions = append(otherOptions, createUsageString(data, currentFlag))
@@ -455,7 +454,7 @@ func (flagSet *FlagSet) usageFuncForGroups(cliOutput io.Writer, writer *tabwrite
 			if !strings.EqualFold(data.group, group.name) {
 				return
 			}
-			if !isUnique {
+			if !uniqueDeduper.isUnique(data) {
 				return
 			}
 			result := createUsageString(data, currentFlag)
