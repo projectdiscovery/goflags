@@ -1,6 +1,7 @@
 package goflags
 
 import (
+	"bytes"
 	"flag"
 	"io/ioutil"
 	"os"
@@ -99,8 +100,34 @@ func TestUsageOrder(t *testing.T) {
 	flagSet.BoolVar(&boolData, "bool-with-default-value", true, "Bool with default value example")
 	flagSet.BoolVarP(&boolData, "bool-with-default-value2", "bwdv", true, "Bool with default value example #2")
 
+	output := &bytes.Buffer{}
+	flag.CommandLine.SetOutput(output)
+
 	flagSet.usageFunc()
-	// TODO try to retrieve the data written to the stdout/err and do some assertions on it
+
+	resultOutput := output.String()
+	actual := resultOutput[strings.Index(resultOutput, "Flags:\n"):]
+
+	expected :=
+		`Flags:
+   -string-value string                        String example value example
+   -ts2 string                                 String with default value example #2 (default "test-string")
+   -string-with-default-value string           String with default value example (default "test-string")
+   -ts, -string-with-default-value2 string     String with default value example #2 (default "test-string")
+   -slice-value string[]                       String slice flag example value
+   -sv, -slice-value2 string[]                 String slice flag example value #2
+   -slice-with-default-value string[]          String slice flag with default example values (default ["a", "b", "c"])
+   -swdf, -slice-with-default-value2 string[]  String slice flag with default example values #2 (default ["a", "b", "c"])
+   -int-value int                              Int value example
+   -iv, -int-value2 int                        Int value example #2
+   -int-with-default-value int                 Int with default value example (default 12)
+   -iwdv, -int-with-default-value2 int         Int with default value example #2 (default 12)
+   -bool-value                                 Bool value example
+   -bv, -bool-value2                           Bool value example #2
+   -bool-with-default-value                    Bool with default value example (default true)
+   -bwdv, -bool-with-default-value2            Bool with default value example #2 (default true)
+`
+	assert.Equal(t, actual, expected)
 
 	tearDown(t.Name())
 }
@@ -190,5 +217,6 @@ func TestParseStringSlice(t *testing.T) {
 }
 
 func tearDown(uniqueValue string) { // sadly there is no official support for setup/teardown/test
-	flag.CommandLine = flag.NewFlagSet(uniqueValue, flag.PanicOnError)
+	flag.CommandLine = flag.NewFlagSet(uniqueValue, flag.ContinueOnError)
+	flag.CommandLine.Usage = flag.Usage
 }
