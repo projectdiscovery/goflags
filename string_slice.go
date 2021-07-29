@@ -13,24 +13,8 @@ func (stringSlice *StringSlice) String() string {
 
 // Set appends a value to the string slice.
 func (stringSlice *StringSlice) Set(value string) error {
-	slice := ToStringSlice(value)
-
-	*stringSlice = append(*stringSlice, slice...)
+	*stringSlice = append(*stringSlice, value)
 	return nil
-}
-
-func ToStringSlice(value string) []string {
-	var result []string
-	if strings.Contains(value, ",") {
-		slices := strings.Split(value, ",")
-		result = make([]string, 0, len(slices))
-		for _, slice := range slices {
-			result = append(result, slice)
-		}
-	} else {
-		result = []string{value}
-	}
-	return result
 }
 
 func (stringSlice *StringSlice) createStringArrayDefaultValue() string {

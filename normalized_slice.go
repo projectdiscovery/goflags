@@ -44,7 +44,7 @@ func ToNormalizedStringSlice(value string) ([]string, error) {
 
 	addPartToResult := func(part string) {
 		if strings.TrimSpace(part) != "" {
-			result = append(result, strings.TrimSpace(strings.Trim(strings.TrimSpace(part), string(quotes))))
+			result = append(result, strings.TrimSpace(strings.Trim(strings.TrimSpace(strings.ToLower(part)), string(quotes))))
 		}
 	}
 

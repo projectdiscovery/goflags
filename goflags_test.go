@@ -154,7 +154,7 @@ type testSliceValue []interface{}
 func (value testSliceValue) String() string   { return "" }
 func (value testSliceValue) Set(string) error { return nil }
 
-func TestMe(t *testing.T) {
+func TestCustomSliceUsageType(t *testing.T) {
 	testCases := map[string]flag.Flag{
 		"string[]": {Value: &StringSlice{}},
 		"value[]":  {Value: &testSliceValue{}},
@@ -164,6 +164,29 @@ func TestMe(t *testing.T) {
 		result := createUsageTypeAndDescription(&currentFlag, reflect.TypeOf(currentFlag.Value))
 		assert.Equal(t, expected, strings.TrimSpace(result))
 	}
+}
+
+func TestParseStringSlice(t *testing.T) {
+	flagSet := NewFlagSet()
+
+	var stringSlice StringSlice
+	flagSet.StringSliceVarP(&stringSlice, "header", "H", []string{}, "Header values. Expected usage: -H \"header1\":\"value1\" -H \"header2\":\"value2\"")
+
+	header1 := "\"header1:value1\""
+	header2 := "\" HEADER 2: VALUE2  \""
+	header3 := "\"header3\":\"value3, value4\""
+
+	os.Args = []string{
+		"./appName",
+		"-H", header1,
+		"-header", header2,
+		"-H", header3,
+	}
+
+	err := flagSet.Parse()
+	assert.Nil(t, err)
+
+	assert.Equal(t, stringSlice, StringSlice{header1, header2, header3})
 }
 
 func tearDown(uniqueValue string) { // sadly there is no official support for setup/teardown/test

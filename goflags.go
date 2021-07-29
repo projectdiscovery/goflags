@@ -321,7 +321,8 @@ func (flagSet *FlagSet) IntVar(field *int, long string, defaultValue int, usage 
 	return flagData
 }
 
-// NormalizedStringSliceVarP adds a path slice flag with a shortname and longname
+// NormalizedStringSliceVarP adds a path slice flag with a shortname and longname.
+// It supports comma separated values, that are normalized (lower-cased, stripped of any leading and trailing whitespaces and quotes)
 func (flagSet *FlagSet) NormalizedStringSliceVarP(field *NormalizedStringSlice, long, short string, defaultValue []string, usage string) *FlagData {
 	for _, item := range defaultValue {
 		_ = field.Set(item)
@@ -342,6 +343,7 @@ func (flagSet *FlagSet) NormalizedStringSliceVarP(field *NormalizedStringSlice, 
 }
 
 // NormalizedStringSliceVar adds a path slice flag with a long name
+// It supports comma separated values, that are normalized (lower-cased, stripped of any leading and trailing whitespaces and quotes)
 func (flagSet *FlagSet) NormalizedStringSliceVar(field *NormalizedStringSlice, long string, defaultValue []string, usage string) *FlagData {
 	for _, item := range defaultValue {
 		_ = field.Set(item)
@@ -359,6 +361,8 @@ func (flagSet *FlagSet) NormalizedStringSliceVar(field *NormalizedStringSlice, l
 }
 
 // StringSliceVarP adds a string slice flag with a shortname and longname
+// Supports ONE value at a time. Adding multiple values require repeating the argument (-flag value1 -flag value2)
+// No value normalization is happening.
 func (flagSet *FlagSet) StringSliceVarP(field *StringSlice, long, short string, defaultValue []string, usage string) *FlagData {
 	for _, item := range defaultValue {
 		_ = field.Set(item)
@@ -379,6 +383,8 @@ func (flagSet *FlagSet) StringSliceVarP(field *StringSlice, long, short string, 
 }
 
 // StringSliceVar adds a string slice flag with a longname
+// Supports ONE value at a time. Adding multiple values require repeating the argument (-flag value1 -flag value2)
+// No value normalization is happening.
 func (flagSet *FlagSet) StringSliceVar(field *StringSlice, long string, defaultValue []string, usage string) *FlagData {
 	for _, item := range defaultValue {
 		_ = field.Set(item)

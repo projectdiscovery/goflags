@@ -20,7 +20,7 @@ func TestNormalizedStringSlicePositive(t *testing.T) {
 		"\n  aa, \tbb,  cc\r   ":   expectedABC,
 
 		"\"value1\",value,'value3'": {"value1", "value", "value3"},
-		"\"value1\",VALUE,'value3'": {"value1", "VALUE", "value3"},
+		"\"value1\",VALUE,'value3'": {"value1", "value", "value3"},
 
 		"\"/root/home/file0\"":       expectedFilePath,
 		"'/root/home/file0'":         expectedFilePath,
