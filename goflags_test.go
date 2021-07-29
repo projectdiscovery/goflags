@@ -83,22 +83,29 @@ func TestUsageOrder(t *testing.T) {
 	var intData int
 	var boolData bool
 
-	flagSet.StringVar(&stringData, "string-value", "", "String example value example")
-	flagSet.StringVarP(&stringData, "", "ts2", "test-string", "String with default value example #2")
-	flagSet.StringVar(&stringData, "string-with-default-value", "test-string", "String with default value example")
-	flagSet.StringVarP(&stringData, "string-with-default-value2", "ts", "test-string", "String with default value example #2")
-	flagSet.StringSliceVar(&stringSliceData, "slice-value", []string{}, "String slice flag example value")
-	flagSet.StringSliceVarP(&stringSliceData, "slice-value2", "sv", []string{}, "String slice flag example value #2")
-	flagSet.StringSliceVar(&stringSliceData, "slice-with-default-value", []string{"a", "b", "c"}, "String slice flag with default example values")
-	flagSet.StringSliceVarP(&stringSliceData2, "slice-with-default-value2", "swdf", []string{"a", "b", "c"}, "String slice flag with default example values #2")
-	flagSet.IntVar(&intData, "int-value", 0, "Int value example")
-	flagSet.IntVarP(&intData, "int-value2", "iv", 0, "Int value example #2")
-	flagSet.IntVar(&intData, "int-with-default-value", 12, "Int with default value example")
-	flagSet.IntVarP(&intData, "int-with-default-value2", "iwdv", 12, "Int with default value example #2")
-	flagSet.BoolVar(&boolData, "bool-value", false, "Bool value example")
-	flagSet.BoolVarP(&boolData, "bool-value2", "bv", false, "Bool value example #2")
-	flagSet.BoolVar(&boolData, "bool-with-default-value", true, "Bool with default value example")
-	flagSet.BoolVarP(&boolData, "bool-with-default-value2", "bwdv", true, "Bool with default value example #2")
+	flagSet.SetGroup("String", "String")
+	flagSet.StringVar(&stringData, "string-value", "", "String example value example").Group("String")
+	flagSet.StringVarP(&stringData, "", "ts2", "test-string", "String with default value example #2").Group("String")
+	flagSet.StringVar(&stringData, "string-with-default-value", "test-string", "String with default value example").Group("String")
+	flagSet.StringVarP(&stringData, "string-with-default-value2", "ts", "test-string", "String with default value example #2").Group("String")
+
+	flagSet.SetGroup("StringSlice", "StringSlice")
+	flagSet.StringSliceVar(&stringSliceData, "slice-value", []string{}, "String slice flag example value").Group("StringSlice")
+	flagSet.StringSliceVarP(&stringSliceData, "slice-value2", "sv", []string{}, "String slice flag example value #2").Group("StringSlice")
+	flagSet.StringSliceVar(&stringSliceData, "slice-with-default-value", []string{"a", "b", "c"}, "String slice flag with default example values").Group("StringSlice")
+	flagSet.StringSliceVarP(&stringSliceData2, "slice-with-default-value2", "swdf", []string{"a", "b", "c"}, "String slice flag with default example values #2").Group("StringSlice")
+
+	flagSet.SetGroup("Integer", "Integer")
+	flagSet.IntVar(&intData, "int-value", 0, "Int value example").Group("Integer")
+	flagSet.IntVarP(&intData, "int-value2", "iv", 0, "Int value example #2").Group("Integer")
+	flagSet.IntVar(&intData, "int-with-default-value", 12, "Int with default value example").Group("Integer")
+	flagSet.IntVarP(&intData, "int-with-default-value2", "iwdv", 12, "Int with default value example #2").Group("Integer")
+
+	flagSet.SetGroup("Bool", "Boolean")
+	flagSet.BoolVar(&boolData, "bool-value", false, "Bool value example").Group("Bool")
+	flagSet.BoolVarP(&boolData, "bool-value2", "bv", false, "Bool value example #2").Group("Bool")
+	flagSet.BoolVar(&boolData, "bool-with-default-value", true, "Bool with default value example").Group("Bool")
+	flagSet.BoolVarP(&boolData, "bool-with-default-value2", "bwdv", true, "Bool with default value example #2").Group("Bool")
 
 	output := &bytes.Buffer{}
 	flag.CommandLine.SetOutput(output)
@@ -110,22 +117,26 @@ func TestUsageOrder(t *testing.T) {
 
 	expected :=
 		`Flags:
-   -string-value string                        String example value example
-   -ts2 string                                 String with default value example #2 (default "test-string")
-   -string-with-default-value string           String with default value example (default "test-string")
-   -ts, -string-with-default-value2 string     String with default value example #2 (default "test-string")
+STRING:
+   -string-value string                     String example value example
+   -ts2 string                              String with default value example #2 (default "test-string")
+   -string-with-default-value string        String with default value example (default "test-string")
+   -ts, -string-with-default-value2 string  String with default value example #2 (default "test-string")
+STRINGSLICE:
    -slice-value string[]                       String slice flag example value
    -sv, -slice-value2 string[]                 String slice flag example value #2
    -slice-with-default-value string[]          String slice flag with default example values (default ["a", "b", "c"])
    -swdf, -slice-with-default-value2 string[]  String slice flag with default example values #2 (default ["a", "b", "c"])
-   -int-value int                              Int value example
-   -iv, -int-value2 int                        Int value example #2
-   -int-with-default-value int                 Int with default value example (default 12)
-   -iwdv, -int-with-default-value2 int         Int with default value example #2 (default 12)
-   -bool-value                                 Bool value example
-   -bv, -bool-value2                           Bool value example #2
-   -bool-with-default-value                    Bool with default value example (default true)
-   -bwdv, -bool-with-default-value2            Bool with default value example #2 (default true)
+INTEGER:
+   -int-value int                       Int value example
+   -iv, -int-value2 int                 Int value example #2
+   -int-with-default-value int          Int with default value example (default 12)
+   -iwdv, -int-with-default-value2 int  Int with default value example #2 (default 12)
+BOOLEAN:
+   -bool-value                       Bool value example
+   -bv, -bool-value2                 Bool value example #2
+   -bool-with-default-value          Bool with default value example (default true)
+   -bwdv, -bool-with-default-value2  Bool with default value example #2 (default true)
 `
 	assert.Equal(t, actual, expected)
 
@@ -138,6 +149,8 @@ func TestIncorrectStringFlagsCausePanic(t *testing.T) {
 
 	flagSet.StringVar(&stringData, "", "test-string", "String with default value example")
 	assert.Panics(t, flagSet.usageFunc)
+
+	// env GOOS=linux GOARCH=amd64 go build main.go -o nuclei
 
 	tearDown(t.Name())
 }
