@@ -12,7 +12,7 @@ var quotes = []rune{'"', '\'', '`'}
 type NormalizedStringSlice []string
 
 func (normalizedStringSlice NormalizedStringSlice) String() string {
-	return strings.Join(normalizedStringSlice, " ")
+	return normalizedStringSlice.createStringArrayDefaultValue()
 }
 
 //Set appends a value to the string slice.
