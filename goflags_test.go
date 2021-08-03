@@ -125,8 +125,8 @@ STRING:
 STRINGSLICE:
    -slice-value string[]                       String slice flag example value
    -sv, -slice-value2 string[]                 String slice flag example value #2
-   -slice-with-default-value string[]          String slice flag with default example values (default ["a", "b", "c"])
-   -swdf, -slice-with-default-value2 string[]  String slice flag with default example values #2 (default ["a", "b", "c"])
+   -slice-with-default-value string[]          String slice flag with default example values (default [a b c])
+   -swdf, -slice-with-default-value2 string[]  String slice flag with default example values #2 (default [a b c])
 INTEGER:
    -int-value int                       Int value example
    -iv, -int-value2 int                 Int value example #2

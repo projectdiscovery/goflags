@@ -143,10 +143,15 @@ func (flagSet *FlagSet) generateDefaultConfig() []byte {
 		configBuffer.WriteString("#")
 		configBuffer.WriteString(data.long)
 		configBuffer.WriteString(": ")
-		if s, ok := data.defaultValue.(string); ok {
-			configBuffer.WriteString(s)
-		} else if dv, ok := data.defaultValue.(flag.Value); ok {
+		switch dv := data.defaultValue.(type) {
+		case string:
+			configBuffer.WriteString(dv)
+		case flag.Value:
 			configBuffer.WriteString(dv.String())
+		case StringSlice:
+			configBuffer.WriteString(dv.createStringArrayDefaultValue())
+		case NormalizedStringSlice:
+			configBuffer.WriteString(dv.createStringArrayDefaultValue())
 		}
 
 		configBuffer.WriteString("\n\n")
@@ -323,7 +328,7 @@ func (flagSet *FlagSet) IntVar(field *int, long string, defaultValue int, usage 
 
 // NormalizedStringSliceVarP adds a path slice flag with a shortname and longname.
 // It supports comma separated values, that are normalized (lower-cased, stripped of any leading and trailing whitespaces and quotes)
-func (flagSet *FlagSet) NormalizedStringSliceVarP(field *NormalizedStringSlice, long, short string, defaultValue []string, usage string) *FlagData {
+func (flagSet *FlagSet) NormalizedStringSliceVarP(field *NormalizedStringSlice, long, short string, defaultValue NormalizedStringSlice, usage string) *FlagData {
 	for _, item := range defaultValue {
 		_ = field.Set(item)
 	}
@@ -335,7 +340,7 @@ func (flagSet *FlagSet) NormalizedStringSliceVarP(field *NormalizedStringSlice, 
 		usage:        usage,
 		short:        short,
 		long:         long,
-		defaultValue: field.createStringArrayDefaultValue(),
+		defaultValue: defaultValue,
 	}
 	flagSet.flagKeys.Set(short, flagData)
 	flagSet.flagKeys.Set(long, flagData)
@@ -344,7 +349,7 @@ func (flagSet *FlagSet) NormalizedStringSliceVarP(field *NormalizedStringSlice, 
 
 // NormalizedStringSliceVar adds a path slice flag with a long name
 // It supports comma separated values, that are normalized (lower-cased, stripped of any leading and trailing whitespaces and quotes)
-func (flagSet *FlagSet) NormalizedStringSliceVar(field *NormalizedStringSlice, long string, defaultValue []string, usage string) *FlagData {
+func (flagSet *FlagSet) NormalizedStringSliceVar(field *NormalizedStringSlice, long string, defaultValue NormalizedStringSlice, usage string) *FlagData {
 	for _, item := range defaultValue {
 		_ = field.Set(item)
 	}
@@ -354,7 +359,7 @@ func (flagSet *FlagSet) NormalizedStringSliceVar(field *NormalizedStringSlice, l
 	flagData := &FlagData{
 		usage:        usage,
 		long:         long,
-		defaultValue: field.createStringArrayDefaultValue(),
+		defaultValue: defaultValue,
 	}
 	flagSet.flagKeys.Set(long, flagData)
 	return flagData
@@ -363,7 +368,7 @@ func (flagSet *FlagSet) NormalizedStringSliceVar(field *NormalizedStringSlice, l
 // StringSliceVarP adds a string slice flag with a shortname and longname
 // Supports ONE value at a time. Adding multiple values require repeating the argument (-flag value1 -flag value2)
 // No value normalization is happening.
-func (flagSet *FlagSet) StringSliceVarP(field *StringSlice, long, short string, defaultValue []string, usage string) *FlagData {
+func (flagSet *FlagSet) StringSliceVarP(field *StringSlice, long, short string, defaultValue StringSlice, usage string) *FlagData {
 	for _, item := range defaultValue {
 		_ = field.Set(item)
 	}
@@ -375,7 +380,7 @@ func (flagSet *FlagSet) StringSliceVarP(field *StringSlice, long, short string, 
 		usage:        usage,
 		short:        short,
 		long:         long,
-		defaultValue: field.createStringArrayDefaultValue(),
+		defaultValue: defaultValue,
 	}
 	flagSet.flagKeys.Set(short, flagData)
 	flagSet.flagKeys.Set(long, flagData)
@@ -385,7 +390,7 @@ func (flagSet *FlagSet) StringSliceVarP(field *StringSlice, long, short string, 
 // StringSliceVar adds a string slice flag with a longname
 // Supports ONE value at a time. Adding multiple values require repeating the argument (-flag value1 -flag value2)
 // No value normalization is happening.
-func (flagSet *FlagSet) StringSliceVar(field *StringSlice, long string, defaultValue []string, usage string) *FlagData {
+func (flagSet *FlagSet) StringSliceVar(field *StringSlice, long string, defaultValue StringSlice, usage string) *FlagData {
 	for _, item := range defaultValue {
 		_ = field.Set(item)
 	}
@@ -395,7 +400,7 @@ func (flagSet *FlagSet) StringSliceVar(field *StringSlice, long string, defaultV
 	flagData := &FlagData{
 		usage:        usage,
 		long:         long,
-		defaultValue: field.createStringArrayDefaultValue(),
+		defaultValue: defaultValue,
 	}
 	flagSet.flagKeys.Set(long, flagData)
 	return flagData
