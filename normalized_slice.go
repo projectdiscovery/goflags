@@ -1,8 +1,9 @@
 package goflags
 
 import (
-	"github.com/pkg/errors"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
 var quotes = []rune{'"', '\'', '`'}
@@ -10,8 +11,8 @@ var quotes = []rune{'"', '\'', '`'}
 // NormalizedStringSlice is a slice of strings
 type NormalizedStringSlice []string
 
-func (normalizedStringSlice *NormalizedStringSlice) String() string {
-	return strings.Join(*normalizedStringSlice, " ")
+func (normalizedStringSlice NormalizedStringSlice) String() string {
+	return strings.Join(normalizedStringSlice, " ")
 }
 
 //Set appends a value to the string slice.

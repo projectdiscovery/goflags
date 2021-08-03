@@ -7,8 +7,8 @@ import (
 // StringSlice is a slice of strings
 type StringSlice []string
 
-func (stringSlice *StringSlice) String() string {
-	return strings.Join(*stringSlice, " ")
+func (stringSlice StringSlice) String() string {
+	return stringSlice.createStringArrayDefaultValue()
 }
 
 // Set appends a value to the string slice.
