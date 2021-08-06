@@ -61,7 +61,7 @@ int-value: 543
 bool-value: true`
 	err := ioutil.WriteFile("test.yaml", []byte(configFileData), os.ModePerm)
 	require.Nil(t, err, "could not write temporary config")
-	//defer os.Remove("test.yaml")
+	defer os.Remove("test.yaml")
 
 	err = flagSet.MergeConfigFile("test.yaml")
 	require.Nil(t, err, "could not merge temporary config")
