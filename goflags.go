@@ -41,6 +41,7 @@ type FlagData struct {
 	long         string
 	group        string // unused unless set later
 	defaultValue interface{}
+	skipMarshal  bool
 }
 
 // Group sets the group for a flag data
@@ -56,7 +57,7 @@ func NewFlagSet() *FlagSet {
 func newInsertionOrderedMap() *InsertionOrderedMap {
 	return &InsertionOrderedMap{
 		values: make(map[string]*FlagData),
-		keys:   make([]string, 0, 0),
+		keys:   make([]string, 0),
 	}
 }
 
@@ -103,7 +104,7 @@ func (flagSet *FlagSet) Parse() error {
 		configData := flagSet.generateDefaultConfig()
 		return ioutil.WriteFile(config, configData, os.ModePerm)
 	}
-	flagSet.MergeConfigFile(config) // try to read default config after parsing flags
+	_ = flagSet.MergeConfigFile(config) // try to read default config after parsing flags
 	return nil
 }
 
@@ -120,7 +121,9 @@ func (flagSet *FlagSet) generateDefaultConfig() []byte {
 		flagsToMarshall := make(map[string]interface{})
 
 		flagSet.flagKeys.forEach(func(key string, data *FlagData) {
-			flagsToMarshall[key] = data.defaultValue
+			if !data.skipMarshal {
+				flagsToMarshall[key] = data.defaultValue
+			}
 		})
 
 		flagSetBytes, err := yaml.Marshal(flagsToMarshall)
@@ -402,6 +405,45 @@ func (flagSet *FlagSet) StringSliceVar(field *StringSlice, long string, defaultV
 		long:         long,
 		defaultValue: defaultValue,
 	}
+	flagSet.flagKeys.Set(long, flagData)
+	return flagData
+}
+
+// RuntimeMapVarP adds a runtime only map flag with a longname
+func (flagSet *FlagSet) RuntimeMapVar(field *RuntimeMap, long string, defaultValue []string, usage string) *FlagData {
+	for _, item := range defaultValue {
+		_ = field.Set(item)
+	}
+
+	flag.Var(field, long, usage)
+
+	flagData := &FlagData{
+		usage:        usage,
+		long:         long,
+		defaultValue: defaultValue,
+		skipMarshal:  true,
+	}
+	flagSet.flagKeys.Set(long, flagData)
+	return flagData
+}
+
+// RuntimeMapVarP adds a runtime only map flag with a shortname and longname
+func (flagSet *FlagSet) RuntimeMapVarP(field *RuntimeMap, long, short string, defaultValue []string, usage string) *FlagData {
+	for _, item := range defaultValue {
+		_ = field.Set(item)
+	}
+
+	flag.Var(field, short, usage)
+	flag.Var(field, long, usage)
+
+	flagData := &FlagData{
+		usage:        usage,
+		short:        short,
+		long:         long,
+		defaultValue: defaultValue,
+		skipMarshal:  true,
+	}
+	flagSet.flagKeys.Set(short, flagData)
 	flagSet.flagKeys.Set(long, flagData)
 	return flagData
 }
