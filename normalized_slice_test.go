@@ -2,8 +2,9 @@ package goflags
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNormalizedStringSlicePositive(t *testing.T) {
