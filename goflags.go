@@ -57,7 +57,7 @@ func NewFlagSet() *FlagSet {
 func newInsertionOrderedMap() *InsertionOrderedMap {
 	return &InsertionOrderedMap{
 		values: make(map[string]*FlagData),
-		keys:   make([]string, 0, 0),
+		keys:   make([]string, 0),
 	}
 }
 
@@ -104,7 +104,7 @@ func (flagSet *FlagSet) Parse() error {
 		configData := flagSet.generateDefaultConfig()
 		return ioutil.WriteFile(config, configData, os.ModePerm)
 	}
-	flagSet.MergeConfigFile(config) // try to read default config after parsing flags
+	_ = flagSet.MergeConfigFile(config) // try to read default config after parsing flags
 	return nil
 }
 
