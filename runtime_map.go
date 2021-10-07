@@ -1,10 +1,12 @@
 package goflags
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/projectdiscovery/stringsutil"
+	"golang.org/x/crypto/openpgp/errors"
 )
 
 const (
@@ -41,6 +43,15 @@ func (runtimeMap *RuntimeMap) Set(value string) error {
 	if k != "" {
 		runtimeMap.kv[k] = v
 	}
+	return nil
+}
+
+// Del removes the specified key
+func (runtimeMap *RuntimeMap) Del(key string) error {
+	if runtimeMap.kv == nil {
+		return errors.New("empty runtime map")
+	}
+	delete(runtimeMap.kv, key)
 	return nil
 }
 
