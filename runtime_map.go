@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/projectdiscovery/stringsutil"
-	"golang.org/x/crypto/openpgp/errors"
 )
 
 const (
