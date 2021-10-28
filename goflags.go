@@ -89,7 +89,7 @@ func (flagSet *FlagSet) MergeConfigFile(file string) error {
 // Parse parses the flags provided to the library.
 func (flagSet *FlagSet) Parse() error {
 	flagSet.CommandLine.Usage = flagSet.usageFunc
-	flagSet.CommandLine.Parse(os.Args[1:])
+	_ = flagSet.CommandLine.Parse(os.Args[1:])
 
 	appName := filepath.Base(os.Args[0])
 	// trim extension from app name
