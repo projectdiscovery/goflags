@@ -108,7 +108,7 @@ func TestUsageOrder(t *testing.T) {
 	flagSet.BoolVarP(&boolData, "bool-with-default-value2", "bwdv", true, "Bool with default value example #2").Group("Bool")
 
 	output := &bytes.Buffer{}
-	flag.CommandLine.SetOutput(output)
+	flagSet.CommandLine.SetOutput(output)
 
 	flagSet.usageFunc()
 
