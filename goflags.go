@@ -96,7 +96,7 @@ func (flagSet *FlagSet) MergeConfigFile(file string) error {
 		if !strings.Contains(err.Error(), YAML_FILE_EOF) {
 			fmt.Println(err.Error())
 			fmt.Println(REGENERATING_MSG)
-			flagSet.writeToFile(file)
+			_ = flagSet.writeToFile(file)
 		}
 		return err
 	}
