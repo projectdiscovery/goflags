@@ -19,6 +19,15 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+const (
+	MARSHAL_ERR      = "could not unmarshal config file"
+	YAML_FILE_EOF    = "EOF"
+	PROPERTY_ERR     = "property:%s not found in the config file"
+	TYPE_ERR         = "config file and goflag types are not matching for %s: invalid type"
+	FILE_ERR         = "could not open config file"
+	REGENERATING_MSG = "re-generating default config file"
+)
+
 // FlagSet is a list of flags for an application
 type FlagSet struct {
 	Marshal     bool
@@ -42,6 +51,7 @@ type FlagData struct {
 	group        string // unused unless set later
 	defaultValue interface{}
 	skipMarshal  bool
+	runtimeType  reflect.Type
 }
 
 // Group sets the group for a flag data
@@ -82,7 +92,22 @@ func (flagSet *FlagSet) SetGroup(name, description string) {
 
 // MergeConfigFile reads a config file to merge values from.
 func (flagSet *FlagSet) MergeConfigFile(file string) error {
+	if err := flagSet.validateDefaultConfig(file); err != nil {
+		if !strings.Contains(err.Error(), YAML_FILE_EOF) {
+			fmt.Println(err.Error())
+			fmt.Println(REGENERATING_MSG)
+			flagSet.writeToFile(file)
+		}
+		return err
+	}
 	return flagSet.readConfigFile(file)
+}
+
+// write default configurations to file
+func (flagSet *FlagSet) writeToFile(filePath string) error {
+	configData := flagSet.generateDefaultConfig()
+	return ioutil.WriteFile(filePath, configData, os.ModePerm)
+
 }
 
 // Parse parses the flags provided to the library.
@@ -101,11 +126,10 @@ func (flagSet *FlagSet) Parse() error {
 	config := filepath.Join(homePath, ".config", appName, "config.yaml")
 	_ = os.MkdirAll(filepath.Dir(config), os.ModePerm)
 	if _, err := os.Stat(config); os.IsNotExist(err) {
-		configData := flagSet.generateDefaultConfig()
-		return ioutil.WriteFile(config, configData, os.ModePerm)
+		return flagSet.writeToFile(config)
 	}
-	_ = flagSet.MergeConfigFile(config) // try to read default config after parsing flags
-	return nil
+	err = flagSet.MergeConfigFile(config) // try to read default config after parsing flags
+	return err
 }
 
 // generateDefaultConfig generates a default YAML config file for a flagset.
@@ -163,21 +187,48 @@ func (flagSet *FlagSet) generateDefaultConfig() []byte {
 	return bytes.TrimSuffix(configBuffer.Bytes(), []byte("\n\n"))
 }
 
-// readConfigFile reads the config file and returns any flags
-// that might have been set by the config file.
-//
-// Command line flags however always take precedence over config file ones.
-func (flagSet *FlagSet) readConfigFile(filePath string) error {
+// validate config file for missing property or type mis-match
+func (flagSet *FlagSet) validateDefaultConfig(filePath string) error {
+	config, err := unMarshalDefaultConfig(filePath)
+	if err != nil {
+		return err
+	}
+	for k, v := range config {
+		flagVal, ok := flagSet.flagKeys.values[k]
+		if !ok {
+			return errors.New(fmt.Sprintf(PROPERTY_ERR, k))
+		}
+		if reflect.TypeOf(v) != flagVal.runtimeType {
+			return errors.New(fmt.Sprintf(TYPE_ERR, k))
+		}
+	}
+	return nil
+}
+
+// un-marshal yaml config file
+func unMarshalDefaultConfig(filePath string) (map[string]interface{}, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
-		return errors.Wrap(err, "could not open config file")
+		return nil, errors.Wrap(err, FILE_ERR)
 	}
 	defer file.Close()
 
 	data := make(map[string]interface{})
 	err = yaml.NewDecoder(file).Decode(&data)
 	if err != nil {
-		return errors.Wrap(err, "could not unmarshal config file")
+		return nil, errors.Wrap(err, MARSHAL_ERR)
+	}
+	return data, nil
+}
+
+// readConfigFile reads the config file and returns any flags
+// that might have been set by the config file.
+//
+// Command line flags however always take precedence over config file ones.
+func (flagSet *FlagSet) readConfigFile(filePath string) error {
+	data, err := unMarshalDefaultConfig(filePath)
+	if err != nil {
+		return err
 	}
 	flag.CommandLine.VisitAll(func(fl *flag.Flag) {
 		item, ok := data[fl.Name]
@@ -214,6 +265,7 @@ func (flagSet *FlagSet) VarP(field flag.Value, long, short, usage string) *FlagD
 		short:        short,
 		long:         long,
 		defaultValue: field,
+		runtimeType:  reflect.TypeOf(field),
 	}
 	flagSet.flagKeys.Set(short, flagData)
 	flagSet.flagKeys.Set(long, flagData)
@@ -228,6 +280,7 @@ func (flagSet *FlagSet) Var(field flag.Value, long, usage string) *FlagData {
 		usage:        usage,
 		long:         long,
 		defaultValue: field,
+		runtimeType:  reflect.TypeOf(field),
 	}
 	flagSet.flagKeys.Set(long, flagData)
 	return flagData
@@ -252,6 +305,7 @@ func (flagSet *FlagSet) StringVarP(field *string, long, short, defaultValue, usa
 		short:        short,
 		long:         long,
 		defaultValue: defaultValue,
+		runtimeType:  reflect.TypeOf(defaultValue),
 	}
 	flagSet.flagKeys.Set(short, flagData)
 	flagSet.flagKeys.Set(long, flagData)
@@ -266,6 +320,7 @@ func (flagSet *FlagSet) StringVar(field *string, long, defaultValue, usage strin
 		usage:        usage,
 		long:         long,
 		defaultValue: defaultValue,
+		runtimeType:  reflect.TypeOf(defaultValue),
 	}
 	flagSet.flagKeys.Set(long, flagData)
 	return flagData
@@ -281,6 +336,7 @@ func (flagSet *FlagSet) BoolVarP(field *bool, long, short string, defaultValue b
 		short:        short,
 		long:         long,
 		defaultValue: strconv.FormatBool(defaultValue),
+		runtimeType:  reflect.TypeOf(defaultValue),
 	}
 	flagSet.flagKeys.Set(short, flagData)
 	flagSet.flagKeys.Set(long, flagData)
@@ -295,6 +351,7 @@ func (flagSet *FlagSet) BoolVar(field *bool, long string, defaultValue bool, usa
 		usage:        usage,
 		long:         long,
 		defaultValue: strconv.FormatBool(defaultValue),
+		runtimeType:  reflect.TypeOf(defaultValue),
 	}
 	flagSet.flagKeys.Set(long, flagData)
 	return flagData
@@ -310,6 +367,7 @@ func (flagSet *FlagSet) IntVarP(field *int, long, short string, defaultValue int
 		short:        short,
 		long:         long,
 		defaultValue: strconv.Itoa(defaultValue),
+		runtimeType:  reflect.TypeOf(defaultValue),
 	}
 	flagSet.flagKeys.Set(short, flagData)
 	flagSet.flagKeys.Set(long, flagData)
@@ -324,6 +382,7 @@ func (flagSet *FlagSet) IntVar(field *int, long string, defaultValue int, usage 
 		usage:        usage,
 		long:         long,
 		defaultValue: strconv.Itoa(defaultValue),
+		runtimeType:  reflect.TypeOf(defaultValue),
 	}
 	flagSet.flagKeys.Set(long, flagData)
 	return flagData
@@ -344,6 +403,7 @@ func (flagSet *FlagSet) NormalizedStringSliceVarP(field *NormalizedStringSlice, 
 		short:        short,
 		long:         long,
 		defaultValue: defaultValue,
+		runtimeType:  reflect.TypeOf(defaultValue),
 	}
 	flagSet.flagKeys.Set(short, flagData)
 	flagSet.flagKeys.Set(long, flagData)
@@ -363,6 +423,7 @@ func (flagSet *FlagSet) NormalizedStringSliceVar(field *NormalizedStringSlice, l
 		usage:        usage,
 		long:         long,
 		defaultValue: defaultValue,
+		runtimeType:  reflect.TypeOf(defaultValue),
 	}
 	flagSet.flagKeys.Set(long, flagData)
 	return flagData
@@ -384,6 +445,7 @@ func (flagSet *FlagSet) StringSliceVarP(field *StringSlice, long, short string, 
 		short:        short,
 		long:         long,
 		defaultValue: defaultValue,
+		runtimeType:  reflect.TypeOf(defaultValue),
 	}
 	flagSet.flagKeys.Set(short, flagData)
 	flagSet.flagKeys.Set(long, flagData)
@@ -404,6 +466,7 @@ func (flagSet *FlagSet) StringSliceVar(field *StringSlice, long string, defaultV
 		usage:        usage,
 		long:         long,
 		defaultValue: defaultValue,
+		runtimeType:  reflect.TypeOf(defaultValue),
 	}
 	flagSet.flagKeys.Set(long, flagData)
 	return flagData
@@ -422,6 +485,7 @@ func (flagSet *FlagSet) RuntimeMapVar(field *RuntimeMap, long string, defaultVal
 		long:         long,
 		defaultValue: defaultValue,
 		skipMarshal:  true,
+		runtimeType:  reflect.TypeOf(defaultValue),
 	}
 	flagSet.flagKeys.Set(long, flagData)
 	return flagData
@@ -442,6 +506,7 @@ func (flagSet *FlagSet) RuntimeMapVarP(field *RuntimeMap, long, short string, de
 		long:         long,
 		defaultValue: defaultValue,
 		skipMarshal:  true,
+		runtimeType:  reflect.TypeOf(defaultValue),
 	}
 	flagSet.flagKeys.Set(short, flagData)
 	flagSet.flagKeys.Set(long, flagData)
