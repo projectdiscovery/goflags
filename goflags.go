@@ -20,12 +20,13 @@ import (
 )
 
 const (
-	MARSHAL_ERR      = "could not unmarshal config file"
+	MARSHAL_ERR      = "could not unmarshal configuration file"
 	YAML_FILE_EOF    = "EOF"
 	PROPERTY_ERR     = "property:%s not found in the config file"
-	TYPE_ERR         = "config file and goflag types are not matching for %s: invalid type"
-	FILE_ERR         = "could not open config file"
-	REGENERATING_MSG = "re-generating default config file"
+	TYPE_ERR         = "configuration file and goflag types are not matching for %s: invalid type"
+	FILE_ERR         = "could not open configuration file"
+	REGENERATING_MSG = "regenerated default configuration file"
+	REGENERATE_FLAG  = "regenerate-config-on-error"
 )
 
 // FlagSet is a list of flags for an application
@@ -37,6 +38,7 @@ type FlagSet struct {
 
 	// OtherOptionsGroupName is the name for all flags not in a group
 	OtherOptionsGroupName string
+	RegenerateOnError     bool
 }
 
 type groupData struct {
@@ -61,7 +63,9 @@ func (flagData *FlagData) Group(name string) {
 
 // NewFlagSet creates a new flagSet structure for the application
 func NewFlagSet() *FlagSet {
-	return &FlagSet{flagKeys: *newInsertionOrderedMap(), OtherOptionsGroupName: "other options"}
+	flagSet := &FlagSet{flagKeys: *newInsertionOrderedMap(), OtherOptionsGroupName: "other options"}
+	flag.BoolVar(&flagSet.RegenerateOnError, REGENERATE_FLAG, false, "regenerate default configuration file on error")
+	return flagSet
 }
 
 func newInsertionOrderedMap() *InsertionOrderedMap {
@@ -90,16 +94,8 @@ func (flagSet *FlagSet) SetGroup(name, description string) {
 	flagSet.groups = append(flagSet.groups, groupData{name: name, description: description})
 }
 
-// MergeConfigFile reads a config file to merge values from.
+// MergeConfigFile reads a configuration file to merge values from.
 func (flagSet *FlagSet) MergeConfigFile(file string) error {
-	if err := flagSet.validateDefaultConfig(file); err != nil {
-		if !strings.Contains(err.Error(), YAML_FILE_EOF) {
-			fmt.Println(err.Error())
-			fmt.Println(REGENERATING_MSG)
-			_ = flagSet.writeToFile(file)
-		}
-		return err
-	}
 	return flagSet.readConfigFile(file)
 }
 
@@ -127,6 +123,15 @@ func (flagSet *FlagSet) Parse() error {
 	_ = os.MkdirAll(filepath.Dir(config), os.ModePerm)
 	if _, err := os.Stat(config); os.IsNotExist(err) {
 		return flagSet.writeToFile(config)
+	}
+	if flagSet.RegenerateOnError {
+		_ = flagSet.writeToFile(config)
+		return errors.New(REGENERATING_MSG)
+	}
+	if err := flagSet.validateDefaultConfig(config); err != nil {
+		if !strings.Contains(err.Error(), YAML_FILE_EOF) {
+			return errors.New(fmt.Sprintf("%s\nuse -%s flag to regenerate the default configuration file", err.Error(), REGENERATE_FLAG))
+		}
 	}
 	err = flagSet.MergeConfigFile(config) // try to read default config after parsing flags
 	return err
@@ -198,7 +203,7 @@ func (flagSet *FlagSet) validateDefaultConfig(filePath string) error {
 		if !ok {
 			return errors.New(fmt.Sprintf(PROPERTY_ERR, k))
 		}
-		if reflect.TypeOf(v) != flagVal.runtimeType {
+		if reflect.TypeOf(v).Kind() != flagVal.runtimeType.Kind() {
 			return errors.New(fmt.Sprintf(TYPE_ERR, k))
 		}
 	}
@@ -227,7 +232,7 @@ func unMarshalDefaultConfig(filePath string) (map[string]interface{}, error) {
 // Command line flags however always take precedence over config file ones.
 func (flagSet *FlagSet) readConfigFile(filePath string) error {
 	data, err := unMarshalDefaultConfig(filePath)
-	if err != nil {
+	if err != nil && !strings.Contains(err.Error(), YAML_FILE_EOF) {
 		return err
 	}
 	flag.CommandLine.VisitAll(func(fl *flag.Flag) {
