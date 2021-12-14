@@ -11,7 +11,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-
 	"github.com/stretchr/testify/require"
 )
 
@@ -32,20 +31,21 @@ func TestGenerateDefaultConfig(t *testing.T) {
 	flagSet.StringSliceVar(&data2, "slice", []string{"item1", "item2"}, "String slice flag example value")
 	defaultConfig := string(flagSet.generateDefaultConfig())
 	parts := strings.SplitN(defaultConfig, "\n", 2)
-
 	require.Equal(t, example, parts[1], "could not get correct default config")
 	tearDown(t.Name())
 }
-
 func TestConfigFileDataTypes(t *testing.T) {
 	flagSet := NewFlagSet()
 	var data string
 	var data2 StringSlice
 	var data3 int
 	var data4 bool
+	var data5 StringSlice
 
 	flagSet.StringVar(&data, "string-value", "", "Default value for a test flag example")
 	flagSet.StringSliceVar(&data2, "slice-value", []string{}, "String slice flag example value")
+	flagSet.StringSliceVar(&data5, "severity", []string{}, "String slice flag example value")
+
 	flagSet.IntVar(&data3, "int-value", 0, "Int value example")
 	flagSet.BoolVar(&data4, "bool-value", false, "Bool value example")
 
@@ -177,8 +177,6 @@ func TestIncorrectFlagsCausePanic(t *testing.T) {
 		uniqueName := strconv.Itoa(index)
 		t.Run(uniqueName, func(t *testing.T) {
 			assert.Panics(t, func() {
-				tearDown(uniqueName)
-
 				flagSet := NewFlagSet()
 				var stringData string
 
@@ -187,6 +185,7 @@ func TestIncorrectFlagsCausePanic(t *testing.T) {
 			})
 		})
 	}
+	tearDown(t.Name())
 }
 
 type testSliceValue []interface{}
@@ -208,24 +207,19 @@ func TestCustomSliceUsageType(t *testing.T) {
 
 func TestParseStringSlice(t *testing.T) {
 	flagSet := NewFlagSet()
-
 	var stringSlice StringSlice
 	flagSet.StringSliceVarP(&stringSlice, "header", "H", []string{}, "Header values. Expected usage: -H \"header1\":\"value1\" -H \"header2\":\"value2\"")
-
 	header1 := "\"header1:value1\""
 	header2 := "\" HEADER 2: VALUE2  \""
 	header3 := "\"header3\":\"value3, value4\""
-
 	os.Args = []string{
 		"./appName",
 		"-H", header1,
 		"-header", header2,
 		"-H", header3,
 	}
-
 	err := flagSet.Parse()
 	assert.Nil(t, err)
-
 	assert.Equal(t, stringSlice, StringSlice{header1, header2, header3})
 }
 
