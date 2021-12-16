@@ -19,15 +19,8 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-const (
-	MARSHAL_ERR      = "could not unmarshal configuration file"
-	YAML_FILE_EOF    = "EOF"
-	PROPERTY_ERR     = "property:%s not found in the config file"
-	TYPE_ERR         = "configuration file and goflag types are not matching for %s: invalid type"
-	FILE_ERR         = "could not open configuration file"
-	REGENERATING_MSG = "regenerated default configuration file"
-	REGENERATE_FLAG  = "regenerate-config-on-error"
-)
+var EofYaml = errors.New("EOF")
+var RegenerateFlag = errors.New("regenerate-config-on-error")
 
 // FlagSet is a list of flags for an application
 type FlagSet struct {
@@ -64,7 +57,7 @@ func (flagData *FlagData) Group(name string) {
 // NewFlagSet creates a new flagSet structure for the application
 func NewFlagSet() *FlagSet {
 	flagSet := &FlagSet{flagKeys: *newInsertionOrderedMap(), OtherOptionsGroupName: "other options"}
-	flag.BoolVar(&flagSet.RegenerateOnError, REGENERATE_FLAG, false, "regenerate default configuration file on error")
+	flag.BoolVar(&flagSet.RegenerateOnError, RegenerateFlag.Error(), false, "regenerate default configuration file on error")
 	return flagSet
 }
 
@@ -126,11 +119,11 @@ func (flagSet *FlagSet) Parse() error {
 	}
 	if flagSet.RegenerateOnError {
 		_ = flagSet.writeToFile(config)
-		return errors.New(REGENERATING_MSG)
+		return errors.New("regenerated default configuration file")
 	}
 	if err := flagSet.validateDefaultConfig(config); err != nil {
-		if !strings.Contains(err.Error(), YAML_FILE_EOF) {
-			return errors.New(fmt.Sprintf("%s\nuse -%s flag to regenerate the default configuration file", err.Error(), REGENERATE_FLAG))
+		if !strings.Contains(err.Error(), EofYaml.Error()) {
+			return errors.New(fmt.Sprintf("%s\nuse -%s flag to regenerate the default configuration file", err.Error(), RegenerateFlag))
 		}
 	}
 	err = flagSet.MergeConfigFile(config) // try to read default config after parsing flags
@@ -201,10 +194,12 @@ func (flagSet *FlagSet) validateDefaultConfig(filePath string) error {
 	for k, v := range config {
 		flagVal, ok := flagSet.flagKeys.values[k]
 		if !ok {
-			return errors.New(fmt.Sprintf(PROPERTY_ERR, k))
+			var ErrProperty = errors.New("property:%s not found in the config file")
+			return errors.New(fmt.Sprintf(ErrProperty.Error(), k))
 		}
 		if reflect.TypeOf(v).Kind() != flagVal.runtimeType.Kind() {
-			return errors.New(fmt.Sprintf(TYPE_ERR, k))
+			var ErrType = errors.New("configuration file and goflag types are not matching for %s: invalid type")
+			return errors.New(fmt.Sprintf(ErrType.Error(), k))
 		}
 	}
 	return nil
@@ -214,14 +209,16 @@ func (flagSet *FlagSet) validateDefaultConfig(filePath string) error {
 func unMarshalDefaultConfig(filePath string) (map[string]interface{}, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
-		return nil, errors.Wrap(err, FILE_ERR)
+		var ErrFile = errors.New("could not open configuration file")
+		return nil, errors.Wrap(err, ErrFile.Error())
 	}
 	defer file.Close()
 
 	data := make(map[string]interface{})
 	err = yaml.NewDecoder(file).Decode(&data)
 	if err != nil {
-		return nil, errors.Wrap(err, MARSHAL_ERR)
+		var ErrMarshal = errors.New("could not unmarshal configuration file")
+		return nil, errors.Wrap(err, ErrMarshal.Error())
 	}
 	return data, nil
 }
@@ -232,7 +229,7 @@ func unMarshalDefaultConfig(filePath string) (map[string]interface{}, error) {
 // Command line flags however always take precedence over config file ones.
 func (flagSet *FlagSet) readConfigFile(filePath string) error {
 	data, err := unMarshalDefaultConfig(filePath)
-	if err != nil && !strings.Contains(err.Error(), YAML_FILE_EOF) {
+	if err != nil && !strings.Contains(err.Error(), EofYaml.Error()) {
 		return err
 	}
 	flag.CommandLine.VisitAll(func(fl *flag.Flag) {
