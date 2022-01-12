@@ -28,6 +28,7 @@ type FlagSet struct {
 
 	// OtherOptionsGroupName is the name for all flags not in a group
 	OtherOptionsGroupName string
+	configOnlyKeys        InsertionOrderedMap
 }
 
 type groupData struct {
@@ -42,6 +43,7 @@ type FlagData struct {
 	group        string // unused unless set later
 	defaultValue interface{}
 	skipMarshal  bool
+	field        flag.Value
 }
 
 // Group sets the group for a flag data
@@ -51,7 +53,7 @@ func (flagData *FlagData) Group(name string) {
 
 // NewFlagSet creates a new flagSet structure for the application
 func NewFlagSet() *FlagSet {
-	return &FlagSet{flagKeys: *newInsertionOrderedMap(), OtherOptionsGroupName: "other options"}
+	return &FlagSet{flagKeys: *newInsertionOrderedMap(), OtherOptionsGroupName: "other options", configOnlyKeys: *newInsertionOrderedMap()}
 }
 
 func newInsertionOrderedMap() *InsertionOrderedMap {
@@ -184,6 +186,33 @@ func (flagSet *FlagSet) readConfigFile(filePath string) error {
 		value := fl.Value.String()
 
 		if strings.EqualFold(fl.DefValue, value) && ok {
+			switch data := item.(type) {
+			case string:
+				_ = fl.Value.Set(data)
+			case bool:
+				_ = fl.Value.Set(strconv.FormatBool(data))
+			case int:
+				_ = fl.Value.Set(strconv.Itoa(data))
+			case []interface{}:
+				for _, v := range data {
+					vStr, ok := v.(string)
+					if ok {
+						_ = fl.Value.Set(vStr)
+					}
+				}
+			}
+		}
+	})
+
+	flagSet.configOnlyKeys.forEach(func(key string, flagData *FlagData) {
+		item, ok := data[key]
+		if ok {
+			fl := flag.Lookup(key)
+			if fl == nil {
+				flag.Var(flagData.field, key, flagData.usage)
+				fl = flag.Lookup(key)
+			}
+
 			switch data := item.(type) {
 			case string:
 				_ = fl.Value.Set(data)
@@ -409,6 +438,22 @@ func (flagSet *FlagSet) StringSliceVar(field *StringSlice, long string, defaultV
 	return flagData
 }
 
+// StringSliceVarConfigOnly adds a string slice config value (without flag) with a longname
+func (flagSet *FlagSet) StringSliceVarConfigOnly(field *StringSlice, long string, defaultValue StringSlice, usage string) *FlagData {
+	for _, item := range defaultValue {
+		_ = field.Set(item)
+	}
+	flagData := &FlagData{
+		usage:        usage,
+		long:         long,
+		defaultValue: defaultValue,
+		field:        field,
+	}
+	flagSet.configOnlyKeys.Set(long, flagData)
+	flagSet.flagKeys.Set(long, flagData)
+	return flagData
+}
+
 // RuntimeMapVarP adds a runtime only map flag with a longname
 func (flagSet *FlagSet) RuntimeMapVar(field *RuntimeMap, long string, defaultValue []string, usage string) *FlagData {
 	for _, item := range defaultValue {
@@ -488,24 +533,25 @@ func (flagSet *FlagSet) usageFuncForGroups(cliOutput io.Writer, writer *tabwrite
 		fmt.Fprintf(cliOutput, "%s:\n", normalizeGroupDescription(group.description))
 
 		flagSet.flagKeys.forEach(func(key string, data *FlagData) {
-			currentFlag := flag.CommandLine.Lookup(key)
+			if currentFlag := flag.CommandLine.Lookup(key); currentFlag != nil {
 
-			if data.group == "" {
+				if data.group == "" {
+					if !uniqueDeduper.isUnique(data) {
+						return
+					}
+					otherOptions = append(otherOptions, createUsageString(data, currentFlag))
+					return
+				}
+				// Ignore the flag if it's not in our intended group
+				if !strings.EqualFold(data.group, group.name) {
+					return
+				}
 				if !uniqueDeduper.isUnique(data) {
 					return
 				}
-				otherOptions = append(otherOptions, createUsageString(data, currentFlag))
-				return
+				result := createUsageString(data, currentFlag)
+				fmt.Fprint(writer, result, "\n")
 			}
-			// Ignore the flag if it's not in our intended group
-			if !strings.EqualFold(data.group, group.name) {
-				return
-			}
-			if !uniqueDeduper.isUnique(data) {
-				return
-			}
-			result := createUsageString(data, currentFlag)
-			fmt.Fprint(writer, result, "\n")
 		})
 		writer.Flush()
 		fmt.Printf("\n")
