@@ -519,13 +519,13 @@ func (flagSet *FlagSet) usageFuncInternal(writer *tabwriter.Writer) {
 	uniqueDeduper := newUniqueDeduper()
 
 	flagSet.flagKeys.forEach(func(key string, data *FlagData) {
-		currentFlag := flagSet.CommandLine.Lookup(key)
-
-		if !uniqueDeduper.isUnique(data) {
-			return
+		if currentFlag := flagSet.CommandLine.Lookup(key); currentFlag != nil {
+			if !uniqueDeduper.isUnique(data) {
+				return
+			}
+			result := createUsageString(data, currentFlag)
+			fmt.Fprint(writer, result, "\n")
 		}
-		result := createUsageString(data, currentFlag)
-		fmt.Fprint(writer, result, "\n")
 	})
 	writer.Flush()
 }

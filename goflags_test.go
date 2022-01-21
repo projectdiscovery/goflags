@@ -5,6 +5,7 @@ import (
 	"flag"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"reflect"
 	"strconv"
 	"strings"
@@ -217,7 +218,7 @@ func TestParseStringSlice(t *testing.T) {
 	header3 := "\"header3\":\"value3, value4\""
 
 	os.Args = []string{
-		"./appName",
+		os.Args[0],
 		"-H", header1,
 		"-header", header2,
 		"-H", header3,
@@ -227,6 +228,58 @@ func TestParseStringSlice(t *testing.T) {
 	assert.Nil(t, err)
 
 	assert.Equal(t, stringSlice, StringSlice{header1, header2, header3})
+	tearDown(t.Name())
+
+}
+
+func TestConfigOnlyDataTypes(t *testing.T) {
+	flagSet := NewFlagSet()
+	var data StringSlice
+
+	flagSet.StringSliceVarConfigOnly(&data, "config-only", []string{}, "String slice config only flag example value")
+
+	configFileData := `
+config-only:
+ - test
+ - test2
+ `
+	err := ioutil.WriteFile("test.yaml", []byte(configFileData), os.ModePerm)
+	require.Nil(t, err, "could not write temporary config")
+	defer os.Remove("test.yaml")
+
+	err = flagSet.MergeConfigFile("test.yaml")
+	require.Nil(t, err, "could not merge temporary config")
+
+	require.Equal(t, StringSlice{"test", "test2"}, data, "could not get correct string slice")
+	tearDown(t.Name())
+}
+
+func TestConfigOnlyDataTypesNegative(t *testing.T) {
+
+	if os.Getenv("SHOULD_RUN") == "1" {
+		flagSet := NewFlagSet()
+
+		var data StringSlice
+		value := "\"config-only\":\"value1, value2\""
+
+		flagSet.StringSliceVarConfigOnly(&data, "config-only", []string{}, "String slice config only flag example value")
+		os.Args = []string{
+			os.Args[0],
+			"-config-only", value,
+		}
+		err := flagSet.Parse()
+		assert.Nil(t, err)
+		return
+	}
+	cmd := exec.Command(os.Args[0], "-test.run=TestConfigOnlyDataTypesNegative")
+	cmd.Env = append(os.Environ(), "SHOULD_RUN=1")
+	err := cmd.Run()
+	if e, ok := err.(*exec.ExitError); ok && !e.Success() {
+		return
+	}
+	t.Fatalf("process ran with err %v, want exit error", err)
+	tearDown(t.Name())
+
 }
 
 func tearDown(uniqueValue string) { // sadly there is no official support for setup/teardown/test
