@@ -121,7 +121,7 @@ func (flagSet *FlagSet) Parse() error {
 	if err := flagSet.validateDefaultConfig(config); err != nil {
 		if !strings.Contains(err.Error(), EofYaml.Error()) {
 			data, _ := ioutil.ReadFile(config)
-			ioutil.WriteFile(provider, data, os.FileMode(0644))
+			_ = ioutil.WriteFile(provider, data, os.FileMode(0644))
 			_ = flagSet.writeToFile(config)
 			return errors.New(fmt.Sprintf("Existing keys/token have been migrated to %s, use -providerconfig flag to use the provider config file", provider))
 		}
@@ -147,7 +147,7 @@ func (flagSet *FlagSet) GenerateProviderConfig(data map[string]interface{}) {
 	if marshalledBytes, err := yaml.Marshal(data); err == nil {
 		homePath, _ := os.UserHomeDir()
 		provider := filepath.Join(homePath, ".config", appName, "provider.yaml")
-		ioutil.WriteFile(provider, marshalledBytes, os.ModePerm)
+		_ = ioutil.WriteFile(provider, marshalledBytes, os.ModePerm)
 	}
 }
 
