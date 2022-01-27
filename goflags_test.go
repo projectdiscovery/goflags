@@ -5,7 +5,6 @@ import (
 	"flag"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"reflect"
 	"strconv"
 	"strings"
@@ -236,7 +235,9 @@ func TestConfigOnlyDataTypes(t *testing.T) {
 	flagSet := NewFlagSet()
 	var data StringSlice
 
-	flagSet.StringSliceVarConfigOnly(&data, "config-only", []string{}, "String slice config only flag example value")
+	flagSet.StringSliceVarConfigOnly(&data, "config-only", []string{}, "String slice config only flag example")
+
+	require.Nil(t, flagSet.CommandLine.Lookup("config-only"), "config-only flag should not be registered")
 
 	configFileData := `
 config-only:
@@ -252,34 +253,6 @@ config-only:
 
 	require.Equal(t, StringSlice{"test", "test2"}, data, "could not get correct string slice")
 	tearDown(t.Name())
-}
-
-func TestConfigOnlyDataTypesNegative(t *testing.T) {
-
-	if os.Getenv("SHOULD_RUN") == "1" {
-		flagSet := NewFlagSet()
-
-		var data StringSlice
-		value := "\"config-only\":\"value1, value2\""
-
-		flagSet.StringSliceVarConfigOnly(&data, "config-only", []string{}, "String slice config only flag example value")
-		os.Args = []string{
-			os.Args[0],
-			"-config-only", value,
-		}
-		err := flagSet.Parse()
-		assert.Nil(t, err)
-		return
-	}
-	cmd := exec.Command(os.Args[0], "-test.run=TestConfigOnlyDataTypesNegative")
-	cmd.Env = append(os.Environ(), "SHOULD_RUN=1")
-	err := cmd.Run()
-	if e, ok := err.(*exec.ExitError); ok && !e.Success() {
-		return
-	}
-	t.Fatalf("process ran with err %v, want exit error", err)
-	tearDown(t.Name())
-
 }
 
 func tearDown(uniqueValue string) { // sadly there is no official support for setup/teardown/test
