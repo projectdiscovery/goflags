@@ -19,8 +19,10 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-var EofYaml = errors.New("EOF")
-var RegenerateFlag = errors.New("regenerate-config-on-error")
+var (
+	EofYaml = errors.New("EOF")
+	appName string
+)
 
 // FlagSet is a list of flags for an application
 type FlagSet struct {
@@ -31,7 +33,7 @@ type FlagSet struct {
 
 	// OtherOptionsGroupName is the name for all flags not in a group
 	OtherOptionsGroupName string
-	RegenerateOnError     bool
+	ProviderConfigFile    bool
 }
 
 type groupData struct {
@@ -57,7 +59,10 @@ func (flagData *FlagData) Group(name string) {
 // NewFlagSet creates a new flagSet structure for the application
 func NewFlagSet() *FlagSet {
 	flagSet := &FlagSet{flagKeys: *newInsertionOrderedMap(), OtherOptionsGroupName: "other options"}
-	flag.BoolVar(&flagSet.RegenerateOnError, RegenerateFlag.Error(), false, "regenerate default configuration file on error")
+	flag.BoolVar(&flagSet.ProviderConfigFile, "providerconfig", false, "use provider config file as default configuration")
+	appName = filepath.Base(os.Args[0])
+	// trim extension from app name
+	appName = strings.TrimSuffix(appName, filepath.Ext(appName))
 	return flagSet
 }
 
@@ -103,31 +108,47 @@ func (flagSet *FlagSet) writeToFile(filePath string) error {
 func (flagSet *FlagSet) Parse() error {
 	flag.CommandLine.Usage = flagSet.usageFunc
 	flag.Parse()
-
-	appName := filepath.Base(os.Args[0])
-	// trim extension from app name
-	appName = strings.TrimSuffix(appName, filepath.Ext(appName))
 	homePath, err := os.UserHomeDir()
 	if err != nil {
 		return err
 	}
-
 	config := filepath.Join(homePath, ".config", appName, "config.yaml")
+	provider := filepath.Join(homePath, ".config", appName, "provider.yaml")
 	_ = os.MkdirAll(filepath.Dir(config), os.ModePerm)
 	if _, err := os.Stat(config); os.IsNotExist(err) {
 		return flagSet.writeToFile(config)
 	}
-	if flagSet.RegenerateOnError {
-		_ = flagSet.writeToFile(config)
-		return errors.New("regenerated default configuration file")
-	}
 	if err := flagSet.validateDefaultConfig(config); err != nil {
 		if !strings.Contains(err.Error(), EofYaml.Error()) {
-			return errors.New(fmt.Sprintf("%s\nuse -%s flag to regenerate the default configuration file", err.Error(), RegenerateFlag))
+			data, _ := ioutil.ReadFile(config)
+			ioutil.WriteFile(provider, data, os.FileMode(0644))
+			_ = flagSet.writeToFile(config)
+			return errors.New(fmt.Sprintf("Existing keys/token have been migrated to %s, use -providerconfig flag to use the provider config file", provider))
 		}
+	}
+	if flagSet.ProviderConfigFile {
+		config = provider
 	}
 	err = flagSet.MergeConfigFile(config) // try to read default config after parsing flags
 	return err
+}
+
+func (flagSet *FlagSet) GetProviderConfig() (map[string]interface{}, error) {
+	homePath, _ := os.UserHomeDir()
+	provider := filepath.Join(homePath, ".config", appName, "provider.yaml")
+	config, err := unMarshalDefaultConfig(provider)
+	if err != nil {
+		return nil, err
+	}
+	return config, nil
+}
+
+func (flagSet *FlagSet) GenerateProviderConfig(data map[string]interface{}) {
+	if marshalledBytes, err := yaml.Marshal(data); err == nil {
+		homePath, _ := os.UserHomeDir()
+		provider := filepath.Join(homePath, ".config", appName, "provider.yaml")
+		ioutil.WriteFile(provider, marshalledBytes, os.ModePerm)
+	}
 }
 
 // generateDefaultConfig generates a default YAML config file for a flagset.
