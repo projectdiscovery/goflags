@@ -108,12 +108,8 @@ func (flagSet *FlagSet) writeToFile(filePath string) error {
 func (flagSet *FlagSet) Parse() error {
 	flag.CommandLine.Usage = flagSet.usageFunc
 	flag.Parse()
-	homePath, err := os.UserHomeDir()
-	if err != nil {
-		return err
-	}
-	config := filepath.Join(homePath, ".config", appName, "config.yaml")
-	provider := filepath.Join(homePath, ".config", appName, "provider.yaml")
+	config := flagSet.GetDefaultConfigPath()
+	provider := flagSet.GetProviderConfigPath()
 	_ = os.MkdirAll(filepath.Dir(config), os.ModePerm)
 	if _, err := os.Stat(config); os.IsNotExist(err) {
 		return flagSet.writeToFile(config)
@@ -129,13 +125,12 @@ func (flagSet *FlagSet) Parse() error {
 	if flagSet.ProviderConfigFile {
 		config = provider
 	}
-	err = flagSet.MergeConfigFile(config) // try to read default config after parsing flags
+	err := flagSet.MergeConfigFile(config) // try to read default config after parsing flags
 	return err
 }
 
 func (flagSet *FlagSet) GetProviderConfig() (map[string]interface{}, error) {
-	homePath, _ := os.UserHomeDir()
-	provider := filepath.Join(homePath, ".config", appName, "provider.yaml")
+	provider := flagSet.GetProviderConfigPath()
 	config, err := unMarshalDefaultConfig(provider)
 	if err != nil {
 		return nil, err
@@ -145,10 +140,19 @@ func (flagSet *FlagSet) GetProviderConfig() (map[string]interface{}, error) {
 
 func (flagSet *FlagSet) GenerateProviderConfig(data map[string]interface{}) {
 	if marshalledBytes, err := yaml.Marshal(data); err == nil {
-		homePath, _ := os.UserHomeDir()
-		provider := filepath.Join(homePath, ".config", appName, "provider.yaml")
+		provider := flagSet.GetProviderConfigPath()
 		_ = ioutil.WriteFile(provider, marshalledBytes, os.ModePerm)
 	}
+}
+
+func (flagSet *FlagSet) GetProviderConfigPath() string {
+	homePath, _ := os.UserHomeDir()
+	return filepath.Join(homePath, ".config", appName, "provider.yaml")
+}
+
+func (flagSet *FlagSet) GetDefaultConfigPath() string {
+	homePath, _ := os.UserHomeDir()
+	return filepath.Join(homePath, ".config", appName, "config.yaml")
 }
 
 // generateDefaultConfig generates a default YAML config file for a flagset.
