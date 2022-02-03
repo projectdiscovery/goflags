@@ -5,6 +5,7 @@ go 1.14
 require (
 	github.com/cnf/structhash v0.0.0-20201127153200-e1b16c1ebc08
 	github.com/pkg/errors v0.9.1
+	github.com/projectdiscovery/fileutil v0.0.0-20210928100737-cab279c5d4b5
 	github.com/projectdiscovery/stringsutil v0.0.0-20210804142656-fd3c28dbaafe
 	github.com/stretchr/testify v1.7.0
 	gopkg.in/yaml.v2 v2.4.0
