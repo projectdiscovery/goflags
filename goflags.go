@@ -113,7 +113,7 @@ func (flagSet *FlagSet) Parse() error {
 	config := flagSet.GetDefaultConfigPath()
 	provider := flagSet.GetProviderConfigPath()
 	_ = os.MkdirAll(filepath.Dir(config), os.ModePerm)
-	if fileutil.FileExists(config) {
+	if !fileutil.FileExists(config) {
 		return flagSet.writeToFile(config)
 	}
 	if err := flagSet.validateDefaultConfig(config); err != nil {
@@ -121,7 +121,7 @@ func (flagSet *FlagSet) Parse() error {
 			data, _ := ioutil.ReadFile(config)
 			_ = ioutil.WriteFile(provider, data, os.FileMode(0644))
 			_ = flagSet.writeToFile(config)
-			return fmt.Errorf("Existing keys/token have been migrated to %s, use -providerconfig flag to use the provider config file", provider)
+			return fmt.Errorf("existing keys/token have been migrated to %s, use -providerconfig flag to use the provider config file", provider)
 		}
 	}
 	if flagSet.ProviderConfigFile {
@@ -131,7 +131,7 @@ func (flagSet *FlagSet) Parse() error {
 		if err != nil {
 			return err
 		}
-		if !fileutil.FileExists(provider) {
+		if fileutil.FileExists(provider) {
 			err = flagSet.MergeConfigFile(provider)
 		}
 		return err
