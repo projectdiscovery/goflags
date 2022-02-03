@@ -20,8 +20,9 @@ import (
 )
 
 var (
-	EofYaml = errors.New("EOF")
-	appName string
+	ErrEofYaml       = errors.New("EOF")
+	appName          string
+	ProviderFlagName = "providerconfig"
 )
 
 // FlagSet is a list of flags for an application
@@ -59,7 +60,7 @@ func (flagData *FlagData) Group(name string) {
 // NewFlagSet creates a new flagSet structure for the application
 func NewFlagSet() *FlagSet {
 	flagSet := &FlagSet{flagKeys: *newInsertionOrderedMap(), OtherOptionsGroupName: "other options"}
-	flag.BoolVar(&flagSet.ProviderConfigFile, "providerconfig", false, "use provider config file as default configuration")
+	flag.BoolVar(&flagSet.ProviderConfigFile, ProviderFlagName, false, "use provider config file as default configuration")
 	appName = filepath.Base(os.Args[0])
 	// trim extension from app name
 	appName = strings.TrimSuffix(appName, filepath.Ext(appName))
@@ -104,6 +105,11 @@ func (flagSet *FlagSet) writeToFile(filePath string) error {
 
 }
 
+func noFileExists(path string) bool {
+	_, err := os.Stat(path)
+	return os.IsNotExist(err)
+}
+
 // Parse parses the flags provided to the library.
 func (flagSet *FlagSet) Parse() error {
 	flag.CommandLine.Usage = flagSet.usageFunc
@@ -111,11 +117,11 @@ func (flagSet *FlagSet) Parse() error {
 	config := flagSet.GetDefaultConfigPath()
 	provider := flagSet.GetProviderConfigPath()
 	_ = os.MkdirAll(filepath.Dir(config), os.ModePerm)
-	if _, err := os.Stat(config); os.IsNotExist(err) {
+	if noFileExists(config) {
 		return flagSet.writeToFile(config)
 	}
 	if err := flagSet.validateDefaultConfig(config); err != nil {
-		if !strings.Contains(err.Error(), EofYaml.Error()) {
+		if !strings.Contains(err.Error(), ErrEofYaml.Error()) {
 			data, _ := ioutil.ReadFile(config)
 			_ = ioutil.WriteFile(provider, data, os.FileMode(0644))
 			_ = flagSet.writeToFile(config)
@@ -123,10 +129,17 @@ func (flagSet *FlagSet) Parse() error {
 		}
 	}
 	if flagSet.ProviderConfigFile {
-		config = provider
+		return flagSet.MergeConfigFile(provider)
+	} else {
+		err := flagSet.MergeConfigFile(config)
+		if err != nil {
+			return err
+		}
+		if !noFileExists(provider) {
+			err = flagSet.MergeConfigFile(provider)
+		}
+		return err
 	}
-	err := flagSet.MergeConfigFile(config) // try to read default config after parsing flags
-	return err
 }
 
 func (flagSet *FlagSet) GetProviderConfig() (map[string]interface{}, error) {
@@ -219,12 +232,10 @@ func (flagSet *FlagSet) validateDefaultConfig(filePath string) error {
 	for k, v := range config {
 		flagVal, ok := flagSet.flagKeys.values[k]
 		if !ok {
-			var ErrProperty = errors.New("property:%s not found in the config file")
-			return errors.New(fmt.Sprintf(ErrProperty.Error(), k))
+			return fmt.Errorf("property:%s not found in the config file", k)
 		}
 		if reflect.TypeOf(v).Kind() != flagVal.runtimeType.Kind() {
-			var ErrType = errors.New("configuration file and goflag types are not matching for %s: invalid type")
-			return errors.New(fmt.Sprintf(ErrType.Error(), k))
+			return fmt.Errorf("configuration file and goflag types are not matching for %s: invalid type", k)
 		}
 	}
 	return nil
@@ -234,16 +245,14 @@ func (flagSet *FlagSet) validateDefaultConfig(filePath string) error {
 func unMarshalDefaultConfig(filePath string) (map[string]interface{}, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
-		var ErrFile = errors.New("could not open configuration file")
-		return nil, errors.Wrap(err, ErrFile.Error())
+		return nil, errors.Wrap(err, "could not open configuration file")
 	}
 	defer file.Close()
 
 	data := make(map[string]interface{})
 	err = yaml.NewDecoder(file).Decode(&data)
 	if err != nil {
-		var ErrMarshal = errors.New("could not unmarshal configuration file")
-		return nil, errors.Wrap(err, ErrMarshal.Error())
+		return nil, errors.Wrap(err, "could not unmarshal configuration file")
 	}
 	return data, nil
 }
@@ -254,7 +263,7 @@ func unMarshalDefaultConfig(filePath string) (map[string]interface{}, error) {
 // Command line flags however always take precedence over config file ones.
 func (flagSet *FlagSet) readConfigFile(filePath string) error {
 	data, err := unMarshalDefaultConfig(filePath)
-	if err != nil && !strings.Contains(err.Error(), EofYaml.Error()) {
+	if err != nil && !strings.Contains(err.Error(), ErrEofYaml.Error()) {
 		return err
 	}
 	flag.CommandLine.VisitAll(func(fl *flag.Flag) {
