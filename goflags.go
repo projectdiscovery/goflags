@@ -16,6 +16,7 @@ import (
 
 	"github.com/cnf/structhash"
 	"github.com/pkg/errors"
+	"github.com/projectdiscovery/fileutil"
 	"gopkg.in/yaml.v2"
 )
 
@@ -105,11 +106,6 @@ func (flagSet *FlagSet) writeToFile(filePath string) error {
 
 }
 
-func noFileExists(path string) bool {
-	_, err := os.Stat(path)
-	return os.IsNotExist(err)
-}
-
 // Parse parses the flags provided to the library.
 func (flagSet *FlagSet) Parse() error {
 	flag.CommandLine.Usage = flagSet.usageFunc
@@ -117,7 +113,7 @@ func (flagSet *FlagSet) Parse() error {
 	config := flagSet.GetDefaultConfigPath()
 	provider := flagSet.GetProviderConfigPath()
 	_ = os.MkdirAll(filepath.Dir(config), os.ModePerm)
-	if noFileExists(config) {
+	if fileutil.FileExists(config) {
 		return flagSet.writeToFile(config)
 	}
 	if err := flagSet.validateDefaultConfig(config); err != nil {
@@ -125,7 +121,7 @@ func (flagSet *FlagSet) Parse() error {
 			data, _ := ioutil.ReadFile(config)
 			_ = ioutil.WriteFile(provider, data, os.FileMode(0644))
 			_ = flagSet.writeToFile(config)
-			return errors.New(fmt.Sprintf("Existing keys/token have been migrated to %s, use -providerconfig flag to use the provider config file", provider))
+			return fmt.Errorf("Existing keys/token have been migrated to %s, use -providerconfig flag to use the provider config file", provider)
 		}
 	}
 	if flagSet.ProviderConfigFile {
@@ -135,7 +131,7 @@ func (flagSet *FlagSet) Parse() error {
 		if err != nil {
 			return err
 		}
-		if !noFileExists(provider) {
+		if !fileutil.FileExists(provider) {
 			err = flagSet.MergeConfigFile(provider)
 		}
 		return err
