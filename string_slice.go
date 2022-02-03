@@ -9,6 +9,6 @@ func (stringSlice *StringSlice) Set(value string) error {
 	return nil
 }
 
-func (stringSlice *StringSlice) String() string {
-	return ToString(*stringSlice)
+func (stringSlice StringSlice) String() string {
+	return ToString(stringSlice)
 }
