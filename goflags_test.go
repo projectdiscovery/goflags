@@ -108,7 +108,7 @@ func TestUsageOrder(t *testing.T) {
 	flagSet.BoolVarP(&boolData, "bool-with-default-value2", "bwdv", true, "Bool with default value example #2").Group("Bool")
 
 	output := &bytes.Buffer{}
-	flag.CommandLine.SetOutput(output)
+	flagSet.CommandLine.SetOutput(output)
 
 	flagSet.usageFunc()
 
@@ -217,7 +217,7 @@ func TestParseStringSlice(t *testing.T) {
 	header3 := "\"header3\":\"value3, value4\""
 
 	os.Args = []string{
-		"./appName",
+		os.Args[0],
 		"-H", header1,
 		"-header", header2,
 		"-H", header3,
@@ -227,6 +227,32 @@ func TestParseStringSlice(t *testing.T) {
 	assert.Nil(t, err)
 
 	assert.Equal(t, stringSlice, StringSlice{header1, header2, header3})
+	tearDown(t.Name())
+
+}
+
+func TestConfigOnlyDataTypes(t *testing.T) {
+	flagSet := NewFlagSet()
+	var data StringSlice
+
+	flagSet.StringSliceVarConfigOnly(&data, "config-only", []string{}, "String slice config only flag example")
+
+	require.Nil(t, flagSet.CommandLine.Lookup("config-only"), "config-only flag should not be registered")
+
+	configFileData := `
+config-only:
+ - test
+ - test2
+ `
+	err := ioutil.WriteFile("test.yaml", []byte(configFileData), os.ModePerm)
+	require.Nil(t, err, "could not write temporary config")
+	defer os.Remove("test.yaml")
+
+	err = flagSet.MergeConfigFile("test.yaml")
+	require.Nil(t, err, "could not merge temporary config")
+
+	require.Equal(t, StringSlice{"test", "test2"}, data, "could not get correct string slice")
+	tearDown(t.Name())
 }
 
 func tearDown(uniqueValue string) { // sadly there is no official support for setup/teardown/test
