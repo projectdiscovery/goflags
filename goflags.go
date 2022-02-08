@@ -25,9 +25,11 @@ type FlagSet struct {
 	description string
 	flagKeys    InsertionOrderedMap
 	groups      []groupData
+	CommandLine *flag.FlagSet
 
 	// OtherOptionsGroupName is the name for all flags not in a group
 	OtherOptionsGroupName string
+	configOnlyKeys        InsertionOrderedMap
 }
 
 type groupData struct {
@@ -42,6 +44,7 @@ type FlagData struct {
 	group        string // unused unless set later
 	defaultValue interface{}
 	skipMarshal  bool
+	field        flag.Value
 }
 
 // Group sets the group for a flag data
@@ -51,7 +54,12 @@ func (flagData *FlagData) Group(name string) {
 
 // NewFlagSet creates a new flagSet structure for the application
 func NewFlagSet() *FlagSet {
-	return &FlagSet{flagKeys: *newInsertionOrderedMap(), OtherOptionsGroupName: "other options"}
+	return &FlagSet{
+		flagKeys:              *newInsertionOrderedMap(),
+		OtherOptionsGroupName: "other options",
+		CommandLine:           flag.NewFlagSet(os.Args[0], flag.ExitOnError),
+		configOnlyKeys:        *newInsertionOrderedMap(),
+	}
 }
 
 func newInsertionOrderedMap() *InsertionOrderedMap {
@@ -87,8 +95,8 @@ func (flagSet *FlagSet) MergeConfigFile(file string) error {
 
 // Parse parses the flags provided to the library.
 func (flagSet *FlagSet) Parse() error {
-	flag.CommandLine.Usage = flagSet.usageFunc
-	flag.Parse()
+	flagSet.CommandLine.Usage = flagSet.usageFunc
+	_ = flagSet.CommandLine.Parse(os.Args[1:])
 
 	appName := filepath.Base(os.Args[0])
 	// trim extension from app name
@@ -179,11 +187,38 @@ func (flagSet *FlagSet) readConfigFile(filePath string) error {
 	if err != nil {
 		return errors.Wrap(err, "could not unmarshal config file")
 	}
-	flag.CommandLine.VisitAll(func(fl *flag.Flag) {
+	flagSet.CommandLine.VisitAll(func(fl *flag.Flag) {
 		item, ok := data[fl.Name]
 		value := fl.Value.String()
 
 		if strings.EqualFold(fl.DefValue, value) && ok {
+			switch data := item.(type) {
+			case string:
+				_ = fl.Value.Set(data)
+			case bool:
+				_ = fl.Value.Set(strconv.FormatBool(data))
+			case int:
+				_ = fl.Value.Set(strconv.Itoa(data))
+			case []interface{}:
+				for _, v := range data {
+					vStr, ok := v.(string)
+					if ok {
+						_ = fl.Value.Set(vStr)
+					}
+				}
+			}
+		}
+	})
+
+	flagSet.configOnlyKeys.forEach(func(key string, flagData *FlagData) {
+		item, ok := data[key]
+		if ok {
+			fl := flag.Lookup(key)
+			if fl == nil {
+				flag.Var(flagData.field, key, flagData.usage)
+				fl = flag.Lookup(key)
+			}
+
 			switch data := item.(type) {
 			case string:
 				_ = fl.Value.Set(data)
@@ -206,8 +241,8 @@ func (flagSet *FlagSet) readConfigFile(filePath string) error {
 
 // VarP adds a Var flag with a shortname and longname
 func (flagSet *FlagSet) VarP(field flag.Value, long, short, usage string) *FlagData {
-	flag.Var(field, short, usage)
-	flag.Var(field, long, usage)
+	flagSet.CommandLine.Var(field, short, usage)
+	flagSet.CommandLine.Var(field, long, usage)
 
 	flagData := &FlagData{
 		usage:        usage,
@@ -222,7 +257,7 @@ func (flagSet *FlagSet) VarP(field flag.Value, long, short, usage string) *FlagD
 
 // Var adds a Var flag with a longname
 func (flagSet *FlagSet) Var(field flag.Value, long, usage string) *FlagData {
-	flag.Var(field, long, usage)
+	flagSet.CommandLine.Var(field, long, usage)
 
 	flagData := &FlagData{
 		usage:        usage,
@@ -244,8 +279,8 @@ func (flagSet *FlagSet) StringVarEnv(field *string, long, short, defaultValue, e
 
 // StringVarP adds a string flag with a shortname and longname
 func (flagSet *FlagSet) StringVarP(field *string, long, short, defaultValue, usage string) *FlagData {
-	flag.StringVar(field, short, defaultValue, usage)
-	flag.StringVar(field, long, defaultValue, usage)
+	flagSet.CommandLine.StringVar(field, short, defaultValue, usage)
+	flagSet.CommandLine.StringVar(field, long, defaultValue, usage)
 
 	flagData := &FlagData{
 		usage:        usage,
@@ -260,7 +295,7 @@ func (flagSet *FlagSet) StringVarP(field *string, long, short, defaultValue, usa
 
 // StringVar adds a string flag with a longname
 func (flagSet *FlagSet) StringVar(field *string, long, defaultValue, usage string) *FlagData {
-	flag.StringVar(field, long, defaultValue, usage)
+	flagSet.CommandLine.StringVar(field, long, defaultValue, usage)
 
 	flagData := &FlagData{
 		usage:        usage,
@@ -273,8 +308,8 @@ func (flagSet *FlagSet) StringVar(field *string, long, defaultValue, usage strin
 
 // BoolVarP adds a bool flag with a shortname and longname
 func (flagSet *FlagSet) BoolVarP(field *bool, long, short string, defaultValue bool, usage string) *FlagData {
-	flag.BoolVar(field, short, defaultValue, usage)
-	flag.BoolVar(field, long, defaultValue, usage)
+	flagSet.CommandLine.BoolVar(field, short, defaultValue, usage)
+	flagSet.CommandLine.BoolVar(field, long, defaultValue, usage)
 
 	flagData := &FlagData{
 		usage:        usage,
@@ -289,7 +324,7 @@ func (flagSet *FlagSet) BoolVarP(field *bool, long, short string, defaultValue b
 
 // BoolVar adds a bool flag with a longname
 func (flagSet *FlagSet) BoolVar(field *bool, long string, defaultValue bool, usage string) *FlagData {
-	flag.BoolVar(field, long, defaultValue, usage)
+	flagSet.CommandLine.BoolVar(field, long, defaultValue, usage)
 
 	flagData := &FlagData{
 		usage:        usage,
@@ -302,8 +337,8 @@ func (flagSet *FlagSet) BoolVar(field *bool, long string, defaultValue bool, usa
 
 // IntVarP adds a int flag with a shortname and longname
 func (flagSet *FlagSet) IntVarP(field *int, long, short string, defaultValue int, usage string) *FlagData {
-	flag.IntVar(field, short, defaultValue, usage)
-	flag.IntVar(field, long, defaultValue, usage)
+	flagSet.CommandLine.IntVar(field, short, defaultValue, usage)
+	flagSet.CommandLine.IntVar(field, long, defaultValue, usage)
 
 	flagData := &FlagData{
 		usage:        usage,
@@ -318,7 +353,7 @@ func (flagSet *FlagSet) IntVarP(field *int, long, short string, defaultValue int
 
 // IntVar adds a int flag with a longname
 func (flagSet *FlagSet) IntVar(field *int, long string, defaultValue int, usage string) *FlagData {
-	flag.IntVar(field, long, defaultValue, usage)
+	flagSet.CommandLine.IntVar(field, long, defaultValue, usage)
 
 	flagData := &FlagData{
 		usage:        usage,
@@ -336,8 +371,8 @@ func (flagSet *FlagSet) NormalizedStringSliceVarP(field *NormalizedStringSlice, 
 		_ = field.Set(item)
 	}
 
-	flag.Var(field, short, usage)
-	flag.Var(field, long, usage)
+	flagSet.CommandLine.Var(field, short, usage)
+	flagSet.CommandLine.Var(field, long, usage)
 
 	flagData := &FlagData{
 		usage:        usage,
@@ -357,7 +392,7 @@ func (flagSet *FlagSet) NormalizedStringSliceVar(field *NormalizedStringSlice, l
 		_ = field.Set(item)
 	}
 
-	flag.Var(field, long, usage)
+	flagSet.CommandLine.Var(field, long, usage)
 
 	flagData := &FlagData{
 		usage:        usage,
@@ -411,8 +446,8 @@ func (flagSet *FlagSet) StringSliceVarP(field *StringSlice, long, short string, 
 		_ = field.Set(item)
 	}
 
-	flag.Var(field, short, usage)
-	flag.Var(field, long, usage)
+	flagSet.CommandLine.Var(field, short, usage)
+	flagSet.CommandLine.Var(field, long, usage)
 
 	flagData := &FlagData{
 		usage:        usage,
@@ -433,7 +468,7 @@ func (flagSet *FlagSet) StringSliceVar(field *StringSlice, long string, defaultV
 		_ = field.Set(item)
 	}
 
-	flag.Var(field, long, usage)
+	flagSet.CommandLine.Var(field, long, usage)
 
 	flagData := &FlagData{
 		usage:        usage,
@@ -444,13 +479,29 @@ func (flagSet *FlagSet) StringSliceVar(field *StringSlice, long string, defaultV
 	return flagData
 }
 
+// StringSliceVarConfigOnly adds a string slice config value (without flag) with a longname
+func (flagSet *FlagSet) StringSliceVarConfigOnly(field *StringSlice, long string, defaultValue StringSlice, usage string) *FlagData {
+	for _, item := range defaultValue {
+		_ = field.Set(item)
+	}
+	flagData := &FlagData{
+		usage:        usage,
+		long:         long,
+		defaultValue: defaultValue,
+		field:        field,
+	}
+	flagSet.configOnlyKeys.Set(long, flagData)
+	flagSet.flagKeys.Set(long, flagData)
+	return flagData
+}
+
 // RuntimeMapVarP adds a runtime only map flag with a longname
 func (flagSet *FlagSet) RuntimeMapVar(field *RuntimeMap, long string, defaultValue []string, usage string) *FlagData {
 	for _, item := range defaultValue {
 		_ = field.Set(item)
 	}
 
-	flag.Var(field, long, usage)
+	flagSet.CommandLine.Var(field, long, usage)
 
 	flagData := &FlagData{
 		usage:        usage,
@@ -468,8 +519,8 @@ func (flagSet *FlagSet) RuntimeMapVarP(field *RuntimeMap, long, short string, de
 		_ = field.Set(item)
 	}
 
-	flag.Var(field, short, usage)
-	flag.Var(field, long, usage)
+	flagSet.CommandLine.Var(field, short, usage)
+	flagSet.CommandLine.Var(field, long, usage)
 
 	flagData := &FlagData{
 		usage:        usage,
@@ -484,7 +535,7 @@ func (flagSet *FlagSet) RuntimeMapVarP(field *RuntimeMap, long, short string, de
 }
 
 func (flagSet *FlagSet) usageFunc() {
-	cliOutput := flag.CommandLine.Output()
+	cliOutput := flagSet.CommandLine.Output()
 	fmt.Fprintf(cliOutput, "%s\n\n", flagSet.description)
 	fmt.Fprintf(cliOutput, "Usage:\n  %s [flags]\n\n", os.Args[0])
 	fmt.Fprintf(cliOutput, "Flags:\n")
@@ -503,13 +554,13 @@ func (flagSet *FlagSet) usageFuncInternal(writer *tabwriter.Writer) {
 	uniqueDeduper := newUniqueDeduper()
 
 	flagSet.flagKeys.forEach(func(key string, data *FlagData) {
-		currentFlag := flag.CommandLine.Lookup(key)
-
-		if !uniqueDeduper.isUnique(data) {
-			return
+		if currentFlag := flagSet.CommandLine.Lookup(key); currentFlag != nil {
+			if !uniqueDeduper.isUnique(data) {
+				return
+			}
+			result := createUsageString(data, currentFlag)
+			fmt.Fprint(writer, result, "\n")
 		}
-		result := createUsageString(data, currentFlag)
-		fmt.Fprint(writer, result, "\n")
 	})
 	writer.Flush()
 }
@@ -523,24 +574,25 @@ func (flagSet *FlagSet) usageFuncForGroups(cliOutput io.Writer, writer *tabwrite
 		fmt.Fprintf(cliOutput, "%s:\n", normalizeGroupDescription(group.description))
 
 		flagSet.flagKeys.forEach(func(key string, data *FlagData) {
-			currentFlag := flag.CommandLine.Lookup(key)
+			if currentFlag := flagSet.CommandLine.Lookup(key); currentFlag != nil {
 
-			if data.group == "" {
+				if data.group == "" {
+					if !uniqueDeduper.isUnique(data) {
+						return
+					}
+					otherOptions = append(otherOptions, createUsageString(data, currentFlag))
+					return
+				}
+				// Ignore the flag if it's not in our intended group
+				if !strings.EqualFold(data.group, group.name) {
+					return
+				}
 				if !uniqueDeduper.isUnique(data) {
 					return
 				}
-				otherOptions = append(otherOptions, createUsageString(data, currentFlag))
-				return
+				result := createUsageString(data, currentFlag)
+				fmt.Fprint(writer, result, "\n")
 			}
-			// Ignore the flag if it's not in our intended group
-			if !strings.EqualFold(data.group, group.name) {
-				return
-			}
-			if !uniqueDeduper.isUnique(data) {
-				return
-			}
-			result := createUsageString(data, currentFlag)
-			fmt.Fprint(writer, result, "\n")
 		})
 		writer.Flush()
 		fmt.Printf("\n")
