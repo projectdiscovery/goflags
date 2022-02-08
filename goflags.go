@@ -408,8 +408,8 @@ func (flagSet *FlagSet) FileNormalizedStringSliceVarP(field *FileNormalizedStrin
 		_ = field.Set(item)
 	}
 
-	flag.Var(field, short, usage)
-	flag.Var(field, long, usage)
+	flagSet.CommandLine.Var(field, short, usage)
+	flagSet.CommandLine.Var(field, long, usage)
 
 	flagData := &FlagData{
 		usage:        usage,
@@ -427,7 +427,7 @@ func (flagSet *FlagSet) FileNormalizedStringSliceVar(field *FileNormalizedString
 		_ = field.Set(item)
 	}
 
-	flag.Var(field, long, usage)
+	flagSet.CommandLine.Var(field, long, usage)
 
 	flagData := &FlagData{
 		usage:        usage,
