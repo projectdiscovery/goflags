@@ -160,9 +160,9 @@ func (flagSet *FlagSet) generateDefaultConfig() []byte {
 		case flag.Value:
 			configBuffer.WriteString(dv.String())
 		case StringSlice:
-			configBuffer.WriteString(dv.createStringArrayDefaultValue())
+			configBuffer.WriteString(dv.String())
 		case NormalizedStringSlice:
-			configBuffer.WriteString(dv.createStringArrayDefaultValue())
+			configBuffer.WriteString(dv.String())
 		}
 
 		configBuffer.WriteString("\n\n")
@@ -388,6 +388,41 @@ func (flagSet *FlagSet) NormalizedStringSliceVarP(field *NormalizedStringSlice, 
 // NormalizedStringSliceVar adds a path slice flag with a long name
 // It supports comma separated values, that are normalized (lower-cased, stripped of any leading and trailing whitespaces and quotes)
 func (flagSet *FlagSet) NormalizedStringSliceVar(field *NormalizedStringSlice, long string, defaultValue NormalizedStringSlice, usage string) *FlagData {
+	for _, item := range defaultValue {
+		_ = field.Set(item)
+	}
+
+	flagSet.CommandLine.Var(field, long, usage)
+
+	flagData := &FlagData{
+		usage:        usage,
+		long:         long,
+		defaultValue: defaultValue,
+	}
+	flagSet.flagKeys.Set(long, flagData)
+	return flagData
+}
+
+func (flagSet *FlagSet) FileNormalizedStringSliceVarP(field *FileNormalizedStringSlice, long, short string, defaultValue FileNormalizedStringSlice, usage string) *FlagData {
+	for _, item := range defaultValue {
+		_ = field.Set(item)
+	}
+
+	flagSet.CommandLine.Var(field, short, usage)
+	flagSet.CommandLine.Var(field, long, usage)
+
+	flagData := &FlagData{
+		usage:        usage,
+		short:        short,
+		long:         long,
+		defaultValue: defaultValue,
+	}
+	flagSet.flagKeys.Set(short, flagData)
+	flagSet.flagKeys.Set(long, flagData)
+	return flagData
+}
+
+func (flagSet *FlagSet) FileNormalizedStringSliceVar(field *FileNormalizedStringSlice, long string, defaultValue FileNormalizedStringSlice, usage string) *FlagData {
 	for _, item := range defaultValue {
 		_ = field.Set(item)
 	}
