@@ -171,6 +171,14 @@ func (flagSet *FlagSet) generateDefaultConfig() []byte {
 	return bytes.TrimSuffix(configBuffer.Bytes(), []byte("\n\n"))
 }
 
+// CreateGroup within the flagset
+func (flagSet *FlagSet) CreateGroup(groupName, description string, flags ...*FlagData) {
+	flagSet.SetGroup(groupName, description)
+	for _, currentFlag := range flags {
+		currentFlag.Group(groupName)
+	}
+}
+
 // readConfigFile reads the config file and returns any flags
 // that might have been set by the config file.
 //
