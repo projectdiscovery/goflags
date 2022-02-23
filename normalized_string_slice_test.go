@@ -66,3 +66,13 @@ func TestNormalizedStringSliceNegative(t *testing.T) {
 		assert.NotNil(t, err)
 	}
 }
+
+func TestNormalizedOriginalStringSlice(t *testing.T) {
+	result, err := ToNormalizedOriginalStringSlice("/Users/Home/Test/test.yaml")
+	assert.Nil(t, err)
+	assert.Equal(t, []string{"/Users/Home/Test/test.yaml"}, result, "could not get correct path")
+
+	result, err = ToNormalizedOriginalStringSlice("'test user'")
+	assert.Nil(t, err)
+	assert.Equal(t, []string{"test user"}, result, "could not get correct path")
+}
