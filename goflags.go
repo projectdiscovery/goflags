@@ -411,6 +411,41 @@ func (flagSet *FlagSet) NormalizedStringSliceVar(field *NormalizedStringSlice, l
 	return flagData
 }
 
+func (flagSet *FlagSet) NormalizedOriginalStringSliceVarP(field *NormalizedOriginalStringSlice, long, short string, defaultValue NormalizedStringSlice, usage string) *FlagData {
+	for _, item := range defaultValue {
+		_ = field.Set(item)
+	}
+
+	flagSet.CommandLine.Var(field, short, usage)
+	flagSet.CommandLine.Var(field, long, usage)
+
+	flagData := &FlagData{
+		usage:        usage,
+		short:        short,
+		long:         long,
+		defaultValue: defaultValue,
+	}
+	flagSet.flagKeys.Set(short, flagData)
+	flagSet.flagKeys.Set(long, flagData)
+	return flagData
+}
+
+func (flagSet *FlagSet) NormalizedOriginalStringSliceVar(field *NormalizedOriginalStringSlice, long string, defaultValue NormalizedStringSlice, usage string) *FlagData {
+	for _, item := range defaultValue {
+		_ = field.Set(item)
+	}
+
+	flagSet.CommandLine.Var(field, long, usage)
+
+	flagData := &FlagData{
+		usage:        usage,
+		long:         long,
+		defaultValue: defaultValue,
+	}
+	flagSet.flagKeys.Set(long, flagData)
+	return flagData
+}
+
 func (flagSet *FlagSet) FileNormalizedStringSliceVarP(field *FileNormalizedStringSlice, long, short string, defaultValue FileNormalizedStringSlice, usage string) *FlagData {
 	for _, item := range defaultValue {
 		_ = field.Set(item)
@@ -431,6 +466,41 @@ func (flagSet *FlagSet) FileNormalizedStringSliceVarP(field *FileNormalizedStrin
 }
 
 func (flagSet *FlagSet) FileNormalizedStringSliceVar(field *FileNormalizedStringSlice, long string, defaultValue FileNormalizedStringSlice, usage string) *FlagData {
+	for _, item := range defaultValue {
+		_ = field.Set(item)
+	}
+
+	flagSet.CommandLine.Var(field, long, usage)
+
+	flagData := &FlagData{
+		usage:        usage,
+		long:         long,
+		defaultValue: defaultValue,
+	}
+	flagSet.flagKeys.Set(long, flagData)
+	return flagData
+}
+
+func (flagSet *FlagSet) FileNormalizedOriginalStringSliceVarP(field *FileOriginalNormalizedStringSlice, long, short string, defaultValue FileNormalizedStringSlice, usage string) *FlagData {
+	for _, item := range defaultValue {
+		_ = field.Set(item)
+	}
+
+	flagSet.CommandLine.Var(field, short, usage)
+	flagSet.CommandLine.Var(field, long, usage)
+
+	flagData := &FlagData{
+		usage:        usage,
+		short:        short,
+		long:         long,
+		defaultValue: defaultValue,
+	}
+	flagSet.flagKeys.Set(short, flagData)
+	flagSet.flagKeys.Set(long, flagData)
+	return flagData
+}
+
+func (flagSet *FlagSet) FileNormalizedOriginalStringSliceVar(field *FileOriginalNormalizedStringSlice, long string, defaultValue FileNormalizedStringSlice, usage string) *FlagData {
 	for _, item := range defaultValue {
 		_ = field.Set(item)
 	}

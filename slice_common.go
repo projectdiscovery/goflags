@@ -103,5 +103,9 @@ func isEmpty(s string) bool {
 }
 
 func normalize(s string) string {
+	return strings.TrimSpace(strings.Trim(strings.TrimSpace(s), string(quotes)))
+}
+
+func normalizeLowercase(s string) string {
 	return strings.TrimSpace(strings.Trim(strings.TrimSpace(strings.ToLower(s)), string(quotes)))
 }
