@@ -230,6 +230,58 @@ func TestParseStringSlice(t *testing.T) {
 	tearDown(t.Name())
 
 }
+func TestParseCommaSeparatedStringSlice(t *testing.T) {
+	flagSet := NewFlagSet()
+
+	var csStringSlice CommaSeparatedStringSlice
+	flagSet.CommaSeparatedStringSliceVarP(&csStringSlice, "cs-value", "CSV", []string{}, "Comma Separated Values. Expected usage: -CSV value1,value2,value3")
+
+	valueCommon := `value1,Value2 ",value3`
+	value1 := `value1`
+	value2 := `Value2 "`
+	value3 := `value3`
+
+	os.Args = []string{
+		os.Args[0],
+		"-CSV", valueCommon,
+	}
+
+	err := flagSet.Parse()
+	assert.Nil(t, err)
+
+	assert.Equal(t, csStringSlice, CommaSeparatedStringSlice{value1, value2, value3})
+	tearDown(t.Name())
+}
+
+func TestParseFileCommaSeparatedStringSlice(t *testing.T) {
+	flagSet := NewFlagSet()
+
+	var csStringSlice FileCommaSeparatedStringSlice
+	flagSet.FileCommaSeparatedStringSliceVarP(&csStringSlice, "cs-value", "CSV", []string{}, "Comma Separated Values. Expected usage: -CSV path/to/file")
+
+	testFile := "test.txt"
+	value1 := `value1`
+	value2 := `Value2 "`
+	value3 := `value3`
+
+	testFileData := `value1
+Value2 "
+value3`
+	err := ioutil.WriteFile(testFile, []byte(testFileData), os.ModePerm)
+	require.Nil(t, err, "could not write temporary values file")
+	defer os.Remove(testFile)
+
+	os.Args = []string{
+		os.Args[0],
+		"-CSV", testFile,
+	}
+
+	err = flagSet.Parse()
+	assert.Nil(t, err)
+
+	assert.Equal(t, csStringSlice, FileCommaSeparatedStringSlice{value1, value2, value3})
+	tearDown(t.Name())
+}
 
 func TestConfigOnlyDataTypes(t *testing.T) {
 	flagSet := NewFlagSet()

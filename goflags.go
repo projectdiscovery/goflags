@@ -557,6 +557,86 @@ func (flagSet *FlagSet) StringSliceVar(field *StringSlice, long string, defaultV
 	return flagData
 }
 
+
+// CommaSeparatedStringSliceVar adds a string slice flag with a longname
+// No value normalization is happening.
+func (flagSet *FlagSet) CommaSeparatedStringSliceVar(field *CommaSeparatedStringSlice, long string, defaultValue CommaSeparatedStringSlice, usage string) *FlagData {
+	for _, item := range defaultValue {
+		_ = field.Set(item)
+	}
+
+	flagSet.CommandLine.Var(field, long, usage)
+
+	flagData := &FlagData{
+		usage:        usage,
+		long:         long,
+		defaultValue: defaultValue,
+	}
+	flagSet.flagKeys.Set(long, flagData)
+	return flagData
+}
+
+// CommaSeparatedStringSliceVarP adds a string slice flag with a shortname and longname
+// No value normalization is happening.
+func (flagSet *FlagSet) CommaSeparatedStringSliceVarP(field *CommaSeparatedStringSlice, long, short string, defaultValue CommaSeparatedStringSlice, usage string) *FlagData {
+	for _, item := range defaultValue {
+		_ = field.Set(item)
+	}
+
+	flagSet.CommandLine.Var(field, short, usage)
+	flagSet.CommandLine.Var(field, long, usage)
+
+	flagData := &FlagData{
+		usage:        usage,
+		short:        short,
+		long:         long,
+		defaultValue: defaultValue,
+	}
+	flagSet.flagKeys.Set(short, flagData)
+	flagSet.flagKeys.Set(long, flagData)
+	return flagData
+}
+
+
+// FileCommaSeparatedStringSliceVar adds a string slice flag with a longname
+// No value normalization is happening.
+func (flagSet *FlagSet) FileCommaSeparatedStringSliceVar(field *FileCommaSeparatedStringSlice, long string, defaultValue FileCommaSeparatedStringSlice, usage string) *FlagData {
+	for _, item := range defaultValue {
+		_ = field.Set(item)
+	}
+
+	flagSet.CommandLine.Var(field, long, usage)
+
+	flagData := &FlagData{
+		usage:        usage,
+		long:         long,
+		defaultValue: defaultValue,
+	}
+	flagSet.flagKeys.Set(long, flagData)
+	return flagData
+}
+
+// FileCommaSeparatedStringSliceVarP adds a string slice flag with a shortname and longname
+// No value normalization is happening.
+func (flagSet *FlagSet) FileCommaSeparatedStringSliceVarP(field *FileCommaSeparatedStringSlice, long, short string, defaultValue FileCommaSeparatedStringSlice, usage string) *FlagData {
+	for _, item := range defaultValue {
+		_ = field.Set(item)
+	}
+
+	flagSet.CommandLine.Var(field, short, usage)
+	flagSet.CommandLine.Var(field, long, usage)
+
+	flagData := &FlagData{
+		usage:        usage,
+		short:        short,
+		long:         long,
+		defaultValue: defaultValue,
+	}
+	flagSet.flagKeys.Set(short, flagData)
+	flagSet.flagKeys.Set(long, flagData)
+	return flagData
+}
+
 // StringSliceVarConfigOnly adds a string slice config value (without flag) with a longname
 func (flagSet *FlagSet) StringSliceVarConfigOnly(field *StringSlice, long string, defaultValue StringSlice, usage string) *FlagData {
 	for _, item := range defaultValue {
