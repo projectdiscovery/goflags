@@ -55,8 +55,11 @@ func toStringSlice(value string, options Options) ([]string, error) {
 	var result []string
 
 	addPartToResult := func(part string) {
-		if options.IsEmpty(part) {
-			result = append(result, options.Normalize(part))
+		if !options.IsEmpty(part) {
+			if options.Normalize != nil {
+				part = options.Normalize(part)
+			}
+			result = append(result, part)
 		}
 	}
 	if fileutil.FileExists(value) && options.IsFromFile != nil && options.IsFromFile(value) {
@@ -99,7 +102,7 @@ func toStringSlice(value string, options Options) ([]string, error) {
 }
 
 func isEmpty(s string) bool {
-	return strings.TrimSpace(s) != ""
+	return strings.TrimSpace(s) == ""
 }
 
 func normalize(s string) string {
