@@ -105,6 +105,10 @@ func isEmpty(s string) bool {
 	return strings.TrimSpace(s) == ""
 }
 
+func normalizeTrailingParts(s string) string {
+	return strings.TrimSpace(s)
+}
+
 func normalize(s string) string {
 	return strings.TrimSpace(strings.Trim(strings.TrimSpace(s), string(quotes)))
 }

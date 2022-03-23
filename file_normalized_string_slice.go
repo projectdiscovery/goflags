@@ -34,6 +34,22 @@ func (fileNormalizedStringSlice FileOriginalNormalizedStringSlice) String() stri
 	return ToString(fileNormalizedStringSlice)
 }
 
+type FileStringSlice []string
+
+// Set appends a value to the string slice.
+func (fileStringSlice *FileStringSlice) Set(value string) error {
+	slice, err := ToFileStringSlice(value)
+	if err != nil {
+		return err
+	}
+	*fileStringSlice = append(*fileStringSlice, slice...)
+	return nil
+}
+
+func (fileNormalizedStringSlice FileOriginalNormalizedStringSlice) String() string {
+	return ToString(fileNormalizedStringSlice)
+}
+
 var DefaultFileNormalizedStringSliceOptions = Options{
 	IsEmpty:    isEmpty,
 	Normalize:  normalizeLowercase,
@@ -52,4 +68,14 @@ var DefaultFileOriginalNormalizedStringSliceOptions = Options{
 
 func ToFileOriginalNormalizedStringSlice(value string) ([]string, error) {
 	return toStringSlice(value, DefaultFileOriginalNormalizedStringSliceOptions)
+}
+
+var DefaultFileStringSliceOptions = Options{
+	IsEmpty:    isEmpty,
+	Normalize:  normalizeTrailingParts,
+	IsFromFile: func(s string) bool { return true },
+}
+
+func ToFileStringSlice(value string) ([]string, error) {
+	return toStringSlice(value, DefaultFileStringSliceOptions)
 }
