@@ -46,8 +46,8 @@ func (fileStringSlice *FileStringSlice) Set(value string) error {
 	return nil
 }
 
-func (fileNormalizedStringSlice FileOriginalNormalizedStringSlice) String() string {
-	return ToString(fileNormalizedStringSlice)
+func (fileStringSlice FileStringSlice) String() string {
+	return ToString(fileStringSlice)
 }
 
 var DefaultFileNormalizedStringSliceOptions = Options{
