@@ -516,6 +516,41 @@ func (flagSet *FlagSet) FileNormalizedOriginalStringSliceVar(field *FileOriginal
 	return flagData
 }
 
+func (flagSet *FlagSet) FileStringSliceVarP(field *FileStringSlice, long, short string, defaultValue FileStringSlice, usage string) *FlagData {
+	for _, item := range defaultValue {
+		_ = field.Set(item)
+	}
+
+	flagSet.CommandLine.Var(field, short, usage)
+	flagSet.CommandLine.Var(field, long, usage)
+
+	flagData := &FlagData{
+		usage:        usage,
+		short:        short,
+		long:         long,
+		defaultValue: defaultValue,
+	}
+	flagSet.flagKeys.Set(short, flagData)
+	flagSet.flagKeys.Set(long, flagData)
+	return flagData
+}
+
+func (flagSet *FlagSet) FileStringSliceVar(field *FileStringSlice, long string, defaultValue FileStringSlice, usage string) *FlagData {
+	for _, item := range defaultValue {
+		_ = field.Set(item)
+	}
+
+	flagSet.CommandLine.Var(field, long, usage)
+
+	flagData := &FlagData{
+		usage:        usage,
+		long:         long,
+		defaultValue: defaultValue,
+	}
+	flagSet.flagKeys.Set(long, flagData)
+	return flagData
+}
+
 // StringSliceVarP adds a string slice flag with a shortname and longname
 // Supports ONE value at a time. Adding multiple values require repeating the argument (-flag value1 -flag value2)
 // No value normalization is happening.
@@ -557,7 +592,6 @@ func (flagSet *FlagSet) StringSliceVar(field *StringSlice, long string, defaultV
 	return flagData
 }
 
-
 // CommaSeparatedStringSliceVar adds a string slice flag with a longname
 // No value normalization is happening.
 func (flagSet *FlagSet) CommaSeparatedStringSliceVar(field *CommaSeparatedStringSlice, long string, defaultValue CommaSeparatedStringSlice, usage string) *FlagData {
@@ -596,7 +630,6 @@ func (flagSet *FlagSet) CommaSeparatedStringSliceVarP(field *CommaSeparatedStrin
 	flagSet.flagKeys.Set(long, flagData)
 	return flagData
 }
-
 
 // FileCommaSeparatedStringSliceVar adds a string slice flag with a longname
 // No value normalization is happening.
