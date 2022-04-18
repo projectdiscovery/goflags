@@ -15,7 +15,6 @@ import (
 	"text/tabwriter"
 
 	"github.com/cnf/structhash"
-	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
 )
 
@@ -186,14 +185,14 @@ func (flagSet *FlagSet) CreateGroup(groupName, description string, flags ...*Fla
 func (flagSet *FlagSet) readConfigFile(filePath string) error {
 	file, err := os.Open(filePath)
 	if err != nil {
-		return errors.Wrap(err, "could not open config file")
+		return err
 	}
 	defer file.Close()
 
 	data := make(map[string]interface{})
 	err = yaml.NewDecoder(file).Decode(&data)
 	if err != nil {
-		return errors.Wrap(err, "could not unmarshal config file")
+		return err
 	}
 	flagSet.CommandLine.VisitAll(func(fl *flag.Flag) {
 		item, ok := data[fl.Name]
