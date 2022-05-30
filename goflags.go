@@ -248,31 +248,24 @@ func (flagSet *FlagSet) readConfigFile(filePath string) error {
 
 // VarP adds a Var flag with a shortname and longname
 func (flagSet *FlagSet) VarP(field flag.Value, long, short, usage string) *FlagData {
-	flagSet.CommandLine.Var(field, short, usage)
-	flagSet.CommandLine.Var(field, long, usage)
-
 	flagData := &FlagData{
 		usage:        usage,
-		short:        short,
 		long:         long,
 		defaultValue: field,
 	}
-	flagSet.flagKeys.Set(short, flagData)
+	if short != "" {
+		flagData.short = short
+		flagSet.CommandLine.Var(field, short, usage)
+		flagSet.flagKeys.Set(short, flagData)
+	}
+	flagSet.CommandLine.Var(field, long, usage)
 	flagSet.flagKeys.Set(long, flagData)
 	return flagData
 }
 
 // Var adds a Var flag with a longname
 func (flagSet *FlagSet) Var(field flag.Value, long, usage string) *FlagData {
-	flagSet.CommandLine.Var(field, long, usage)
-
-	flagData := &FlagData{
-		usage:        usage,
-		long:         long,
-		defaultValue: field,
-	}
-	flagSet.flagKeys.Set(long, flagData)
-	return flagData
+	return flagSet.VarP(field, long, "", usage)
 }
 
 // StringVarEnv adds a string flag with a shortname and longname with a default value read from env variable
@@ -286,89 +279,69 @@ func (flagSet *FlagSet) StringVarEnv(field *string, long, short, defaultValue, e
 
 // StringVarP adds a string flag with a shortname and longname
 func (flagSet *FlagSet) StringVarP(field *string, long, short, defaultValue, usage string) *FlagData {
-	flagSet.CommandLine.StringVar(field, short, defaultValue, usage)
-	flagSet.CommandLine.StringVar(field, long, defaultValue, usage)
-
 	flagData := &FlagData{
 		usage:        usage,
-		short:        short,
 		long:         long,
 		defaultValue: defaultValue,
 	}
-	flagSet.flagKeys.Set(short, flagData)
+	if short != "" {
+		flagData.short = short
+		flagSet.CommandLine.StringVar(field, short, defaultValue, usage)
+		flagSet.flagKeys.Set(short, flagData)
+	}
+	flagSet.CommandLine.StringVar(field, long, defaultValue, usage)
 	flagSet.flagKeys.Set(long, flagData)
 	return flagData
 }
 
 // StringVar adds a string flag with a longname
 func (flagSet *FlagSet) StringVar(field *string, long, defaultValue, usage string) *FlagData {
-	flagSet.CommandLine.StringVar(field, long, defaultValue, usage)
-
-	flagData := &FlagData{
-		usage:        usage,
-		long:         long,
-		defaultValue: defaultValue,
-	}
-	flagSet.flagKeys.Set(long, flagData)
-	return flagData
+	return flagSet.StringVarP(field, long, "", defaultValue, usage)
 }
 
 // BoolVarP adds a bool flag with a shortname and longname
 func (flagSet *FlagSet) BoolVarP(field *bool, long, short string, defaultValue bool, usage string) *FlagData {
-	flagSet.CommandLine.BoolVar(field, short, defaultValue, usage)
-	flagSet.CommandLine.BoolVar(field, long, defaultValue, usage)
-
 	flagData := &FlagData{
 		usage:        usage,
-		short:        short,
 		long:         long,
 		defaultValue: strconv.FormatBool(defaultValue),
 	}
-	flagSet.flagKeys.Set(short, flagData)
+	if short != "" {
+		flagData.short = short
+		flagSet.CommandLine.BoolVar(field, short, defaultValue, usage)
+		flagSet.flagKeys.Set(short, flagData)
+	}
+	flagSet.CommandLine.BoolVar(field, long, defaultValue, usage)
 	flagSet.flagKeys.Set(long, flagData)
 	return flagData
 }
 
 // BoolVar adds a bool flag with a longname
 func (flagSet *FlagSet) BoolVar(field *bool, long string, defaultValue bool, usage string) *FlagData {
-	flagSet.CommandLine.BoolVar(field, long, defaultValue, usage)
-
-	flagData := &FlagData{
-		usage:        usage,
-		long:         long,
-		defaultValue: strconv.FormatBool(defaultValue),
-	}
-	flagSet.flagKeys.Set(long, flagData)
-	return flagData
+	return flagSet.BoolVarP(field, long, "", defaultValue, usage)
 }
 
 // IntVarP adds a int flag with a shortname and longname
 func (flagSet *FlagSet) IntVarP(field *int, long, short string, defaultValue int, usage string) *FlagData {
-	flagSet.CommandLine.IntVar(field, short, defaultValue, usage)
-	flagSet.CommandLine.IntVar(field, long, defaultValue, usage)
-
 	flagData := &FlagData{
 		usage:        usage,
 		short:        short,
 		long:         long,
 		defaultValue: strconv.Itoa(defaultValue),
 	}
-	flagSet.flagKeys.Set(short, flagData)
+	if short != "" {
+		flagData.short = short
+		flagSet.CommandLine.IntVar(field, short, defaultValue, usage)
+		flagSet.flagKeys.Set(short, flagData)
+	}
+	flagSet.CommandLine.IntVar(field, long, defaultValue, usage)
 	flagSet.flagKeys.Set(long, flagData)
 	return flagData
 }
 
 // IntVar adds a int flag with a longname
 func (flagSet *FlagSet) IntVar(field *int, long string, defaultValue int, usage string) *FlagData {
-	flagSet.CommandLine.IntVar(field, long, defaultValue, usage)
-
-	flagData := &FlagData{
-		usage:        usage,
-		long:         long,
-		defaultValue: strconv.Itoa(defaultValue),
-	}
-	flagSet.flagKeys.Set(long, flagData)
-	return flagData
+	return flagSet.IntVarP(field, long, "", defaultValue, usage)
 }
 
 // NormalizedStringSliceVarP adds a path slice flag with a shortname and longname.
@@ -557,17 +530,18 @@ func (flagSet *FlagSet) StringSliceVarP(field *StringSlice, long, short string, 
 	for _, item := range defaultValue {
 		_ = field.Set(item)
 	}
-
-	flagSet.CommandLine.Var(field, short, usage)
-	flagSet.CommandLine.Var(field, long, usage)
-
 	flagData := &FlagData{
 		usage:        usage,
 		short:        short,
 		long:         long,
 		defaultValue: defaultValue,
 	}
-	flagSet.flagKeys.Set(short, flagData)
+	if short != "" {
+		flagData.short = short
+		flagSet.CommandLine.Var(field, short, usage)
+		flagSet.flagKeys.Set(short, flagData)
+	}
+	flagSet.CommandLine.Var(field, long, usage)
 	flagSet.flagKeys.Set(long, flagData)
 	return flagData
 }
@@ -576,19 +550,7 @@ func (flagSet *FlagSet) StringSliceVarP(field *StringSlice, long, short string, 
 // Supports ONE value at a time. Adding multiple values require repeating the argument (-flag value1 -flag value2)
 // No value normalization is happening.
 func (flagSet *FlagSet) StringSliceVar(field *StringSlice, long string, defaultValue StringSlice, usage string) *FlagData {
-	for _, item := range defaultValue {
-		_ = field.Set(item)
-	}
-
-	flagSet.CommandLine.Var(field, long, usage)
-
-	flagData := &FlagData{
-		usage:        usage,
-		long:         long,
-		defaultValue: defaultValue,
-	}
-	flagSet.flagKeys.Set(long, flagData)
-	return flagData
+	return flagSet.StringSliceVarP(field, long, "", defaultValue, usage)
 }
 
 // CommaSeparatedStringSliceVar adds a string slice flag with a longname
@@ -687,20 +649,7 @@ func (flagSet *FlagSet) StringSliceVarConfigOnly(field *StringSlice, long string
 
 // RuntimeMapVarP adds a runtime only map flag with a longname
 func (flagSet *FlagSet) RuntimeMapVar(field *RuntimeMap, long string, defaultValue []string, usage string) *FlagData {
-	for _, item := range defaultValue {
-		_ = field.Set(item)
-	}
-
-	flagSet.CommandLine.Var(field, long, usage)
-
-	flagData := &FlagData{
-		usage:        usage,
-		long:         long,
-		defaultValue: defaultValue,
-		skipMarshal:  true,
-	}
-	flagSet.flagKeys.Set(long, flagData)
-	return flagData
+	return flagSet.RuntimeMapVarP(field, long, "", defaultValue, usage)
 }
 
 // RuntimeMapVarP adds a runtime only map flag with a shortname and longname
@@ -709,17 +658,19 @@ func (flagSet *FlagSet) RuntimeMapVarP(field *RuntimeMap, long, short string, de
 		_ = field.Set(item)
 	}
 
-	flagSet.CommandLine.Var(field, short, usage)
-	flagSet.CommandLine.Var(field, long, usage)
-
 	flagData := &FlagData{
 		usage:        usage,
-		short:        short,
 		long:         long,
 		defaultValue: defaultValue,
 		skipMarshal:  true,
 	}
-	flagSet.flagKeys.Set(short, flagData)
+
+	if short != "" {
+		flagData.short = short
+		flagSet.CommandLine.Var(field, short, usage)
+		flagSet.flagKeys.Set(short, flagData)
+	}
+	flagSet.CommandLine.Var(field, long, usage)
 	flagSet.flagKeys.Set(long, flagData)
 	return flagData
 }
