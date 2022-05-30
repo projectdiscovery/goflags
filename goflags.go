@@ -200,15 +200,17 @@ func (flagSet *FlagSet) readConfigFile(filePath string) error {
 		value := fl.Value.String()
 
 		if strings.EqualFold(fl.DefValue, value) && ok {
-			switch data := item.(type) {
+			switch itemValue := item.(type) {
 			case string:
-				_ = fl.Value.Set(data)
+				_ = fl.Value.Set(itemValue)
 			case bool:
-				_ = fl.Value.Set(strconv.FormatBool(data))
+				_ = fl.Value.Set(strconv.FormatBool(itemValue))
 			case int:
-				_ = fl.Value.Set(strconv.Itoa(data))
+				_ = fl.Value.Set(strconv.Itoa(itemValue))
+			case time.Duration:
+				_ = fl.Value.Set(itemValue.String())
 			case []interface{}:
-				for _, v := range data {
+				for _, v := range itemValue {
 					vStr, ok := v.(string)
 					if ok {
 						_ = fl.Value.Set(vStr)
