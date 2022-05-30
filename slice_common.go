@@ -53,6 +53,9 @@ type Options struct {
 
 func toStringSlice(value string, options Options) ([]string, error) {
 	var result []string
+	if options.IsEmpty == nil && options.IsFromFile == nil && options.Normalize == nil {
+		return []string{value}, nil
+	}
 
 	addPartToResult := func(part string) {
 		if !options.IsEmpty(part) {

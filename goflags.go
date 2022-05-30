@@ -54,18 +54,15 @@ func (flagData *FlagData) Group(name string) {
 // NewFlagSet creates a new flagSet structure for the application
 func NewFlagSet() *FlagSet {
 	return &FlagSet{
-		flagKeys:              *newInsertionOrderedMap(),
+		flagKeys:              newInsertionOrderedMap(),
 		OtherOptionsGroupName: "other options",
 		CommandLine:           flag.NewFlagSet(os.Args[0], flag.ExitOnError),
-		configOnlyKeys:        *newInsertionOrderedMap(),
+		configOnlyKeys:        newInsertionOrderedMap(),
 	}
 }
 
-func newInsertionOrderedMap() *InsertionOrderedMap {
-	return &InsertionOrderedMap{
-		values: make(map[string]*FlagData),
-		keys:   make([]string, 0),
-	}
+func newInsertionOrderedMap() InsertionOrderedMap {
+	return InsertionOrderedMap{values: make(map[string]*FlagData)}
 }
 
 // Hash returns the unique hash for a flagData structure
@@ -159,8 +156,6 @@ func (flagSet *FlagSet) generateDefaultConfig() []byte {
 		case flag.Value:
 			configBuffer.WriteString(dv.String())
 		case StringSlice:
-			configBuffer.WriteString(dv.String())
-		case NormalizedStringSlice:
 			configBuffer.WriteString(dv.String())
 		}
 
@@ -344,195 +339,19 @@ func (flagSet *FlagSet) IntVar(field *int, long string, defaultValue int, usage 
 	return flagSet.IntVarP(field, long, "", defaultValue, usage)
 }
 
-// NormalizedStringSliceVarP adds a path slice flag with a shortname and longname.
-// It supports comma separated values, that are normalized (lower-cased, stripped of any leading and trailing whitespaces and quotes)
-func (flagSet *FlagSet) NormalizedStringSliceVarP(field *NormalizedStringSlice, long, short string, defaultValue NormalizedStringSlice, usage string) *FlagData {
-	for _, item := range defaultValue {
-		_ = field.Set(item)
-	}
-
-	flagSet.CommandLine.Var(field, short, usage)
-	flagSet.CommandLine.Var(field, long, usage)
-
-	flagData := &FlagData{
-		usage:        usage,
-		short:        short,
-		long:         long,
-		defaultValue: defaultValue,
-	}
-	flagSet.flagKeys.Set(short, flagData)
-	flagSet.flagKeys.Set(long, flagData)
-	return flagData
-}
-
-// NormalizedStringSliceVar adds a path slice flag with a long name
-// It supports comma separated values, that are normalized (lower-cased, stripped of any leading and trailing whitespaces and quotes)
-func (flagSet *FlagSet) NormalizedStringSliceVar(field *NormalizedStringSlice, long string, defaultValue NormalizedStringSlice, usage string) *FlagData {
-	for _, item := range defaultValue {
-		_ = field.Set(item)
-	}
-
-	flagSet.CommandLine.Var(field, long, usage)
-
-	flagData := &FlagData{
-		usage:        usage,
-		long:         long,
-		defaultValue: defaultValue,
-	}
-	flagSet.flagKeys.Set(long, flagData)
-	return flagData
-}
-
-func (flagSet *FlagSet) NormalizedOriginalStringSliceVarP(field *NormalizedOriginalStringSlice, long, short string, defaultValue NormalizedStringSlice, usage string) *FlagData {
-	for _, item := range defaultValue {
-		_ = field.Set(item)
-	}
-
-	flagSet.CommandLine.Var(field, short, usage)
-	flagSet.CommandLine.Var(field, long, usage)
-
-	flagData := &FlagData{
-		usage:        usage,
-		short:        short,
-		long:         long,
-		defaultValue: defaultValue,
-	}
-	flagSet.flagKeys.Set(short, flagData)
-	flagSet.flagKeys.Set(long, flagData)
-	return flagData
-}
-
-func (flagSet *FlagSet) NormalizedOriginalStringSliceVar(field *NormalizedOriginalStringSlice, long string, defaultValue NormalizedStringSlice, usage string) *FlagData {
-	for _, item := range defaultValue {
-		_ = field.Set(item)
-	}
-
-	flagSet.CommandLine.Var(field, long, usage)
-
-	flagData := &FlagData{
-		usage:        usage,
-		long:         long,
-		defaultValue: defaultValue,
-	}
-	flagSet.flagKeys.Set(long, flagData)
-	return flagData
-}
-
-func (flagSet *FlagSet) FileNormalizedStringSliceVarP(field *FileNormalizedStringSlice, long, short string, defaultValue FileNormalizedStringSlice, usage string) *FlagData {
-	for _, item := range defaultValue {
-		_ = field.Set(item)
-	}
-
-	flagSet.CommandLine.Var(field, short, usage)
-	flagSet.CommandLine.Var(field, long, usage)
-
-	flagData := &FlagData{
-		usage:        usage,
-		short:        short,
-		long:         long,
-		defaultValue: defaultValue,
-	}
-	flagSet.flagKeys.Set(short, flagData)
-	flagSet.flagKeys.Set(long, flagData)
-	return flagData
-}
-
-func (flagSet *FlagSet) FileNormalizedStringSliceVar(field *FileNormalizedStringSlice, long string, defaultValue FileNormalizedStringSlice, usage string) *FlagData {
-	for _, item := range defaultValue {
-		_ = field.Set(item)
-	}
-
-	flagSet.CommandLine.Var(field, long, usage)
-
-	flagData := &FlagData{
-		usage:        usage,
-		long:         long,
-		defaultValue: defaultValue,
-	}
-	flagSet.flagKeys.Set(long, flagData)
-	return flagData
-}
-
-func (flagSet *FlagSet) FileNormalizedOriginalStringSliceVarP(field *FileOriginalNormalizedStringSlice, long, short string, defaultValue FileNormalizedStringSlice, usage string) *FlagData {
-	for _, item := range defaultValue {
-		_ = field.Set(item)
-	}
-
-	flagSet.CommandLine.Var(field, short, usage)
-	flagSet.CommandLine.Var(field, long, usage)
-
-	flagData := &FlagData{
-		usage:        usage,
-		short:        short,
-		long:         long,
-		defaultValue: defaultValue,
-	}
-	flagSet.flagKeys.Set(short, flagData)
-	flagSet.flagKeys.Set(long, flagData)
-	return flagData
-}
-
-func (flagSet *FlagSet) FileNormalizedOriginalStringSliceVar(field *FileOriginalNormalizedStringSlice, long string, defaultValue FileNormalizedStringSlice, usage string) *FlagData {
-	for _, item := range defaultValue {
-		_ = field.Set(item)
-	}
-
-	flagSet.CommandLine.Var(field, long, usage)
-
-	flagData := &FlagData{
-		usage:        usage,
-		long:         long,
-		defaultValue: defaultValue,
-	}
-	flagSet.flagKeys.Set(long, flagData)
-	return flagData
-}
-
-func (flagSet *FlagSet) FileStringSliceVarP(field *FileStringSlice, long, short string, defaultValue FileStringSlice, usage string) *FlagData {
-	for _, item := range defaultValue {
-		_ = field.Set(item)
-	}
-
-	flagSet.CommandLine.Var(field, short, usage)
-	flagSet.CommandLine.Var(field, long, usage)
-
-	flagData := &FlagData{
-		usage:        usage,
-		short:        short,
-		long:         long,
-		defaultValue: defaultValue,
-	}
-	flagSet.flagKeys.Set(short, flagData)
-	flagSet.flagKeys.Set(long, flagData)
-	return flagData
-}
-
-func (flagSet *FlagSet) FileStringSliceVar(field *FileStringSlice, long string, defaultValue FileStringSlice, usage string) *FlagData {
-	for _, item := range defaultValue {
-		_ = field.Set(item)
-	}
-
-	flagSet.CommandLine.Var(field, long, usage)
-
-	flagData := &FlagData{
-		usage:        usage,
-		long:         long,
-		defaultValue: defaultValue,
-	}
-	flagSet.flagKeys.Set(long, flagData)
-	return flagData
-}
-
 // StringSliceVarP adds a string slice flag with a shortname and longname
-// Supports ONE value at a time. Adding multiple values require repeating the argument (-flag value1 -flag value2)
-// No value normalization is happening.
-func (flagSet *FlagSet) StringSliceVarP(field *StringSlice, long, short string, defaultValue StringSlice, usage string) *FlagData {
-	for _, item := range defaultValue {
-		_ = field.Set(item)
+// Use options to customize the behavior
+func (flagSet *FlagSet) StringSliceVarP(field *StringSlice, long, short string, defaultValue StringSlice, usage string, options Options) *FlagData {
+	optionMap[field] = options
+	for _, defaultItem := range defaultValue {
+		_ = field.Set(defaultItem)
+		values, _ := toStringSlice(defaultItem, options)
+		for _, value := range values {
+			_ = field.Set(value)
+		}
 	}
 	flagData := &FlagData{
 		usage:        usage,
-		short:        short,
 		long:         long,
 		defaultValue: defaultValue,
 	}
@@ -549,90 +368,12 @@ func (flagSet *FlagSet) StringSliceVarP(field *StringSlice, long, short string, 
 // StringSliceVar adds a string slice flag with a longname
 // Supports ONE value at a time. Adding multiple values require repeating the argument (-flag value1 -flag value2)
 // No value normalization is happening.
-func (flagSet *FlagSet) StringSliceVar(field *StringSlice, long string, defaultValue StringSlice, usage string) *FlagData {
-	return flagSet.StringSliceVarP(field, long, "", defaultValue, usage)
-}
-
-// CommaSeparatedStringSliceVar adds a string slice flag with a longname
-// No value normalization is happening.
-func (flagSet *FlagSet) CommaSeparatedStringSliceVar(field *CommaSeparatedStringSlice, long string, defaultValue CommaSeparatedStringSlice, usage string) *FlagData {
-	for _, item := range defaultValue {
-		_ = field.Set(item)
-	}
-
-	flagSet.CommandLine.Var(field, long, usage)
-
-	flagData := &FlagData{
-		usage:        usage,
-		long:         long,
-		defaultValue: defaultValue,
-	}
-	flagSet.flagKeys.Set(long, flagData)
-	return flagData
-}
-
-// CommaSeparatedStringSliceVarP adds a string slice flag with a shortname and longname
-// No value normalization is happening.
-func (flagSet *FlagSet) CommaSeparatedStringSliceVarP(field *CommaSeparatedStringSlice, long, short string, defaultValue CommaSeparatedStringSlice, usage string) *FlagData {
-	for _, item := range defaultValue {
-		_ = field.Set(item)
-	}
-
-	flagSet.CommandLine.Var(field, short, usage)
-	flagSet.CommandLine.Var(field, long, usage)
-
-	flagData := &FlagData{
-		usage:        usage,
-		short:        short,
-		long:         long,
-		defaultValue: defaultValue,
-	}
-	flagSet.flagKeys.Set(short, flagData)
-	flagSet.flagKeys.Set(long, flagData)
-	return flagData
-}
-
-// FileCommaSeparatedStringSliceVar adds a string slice flag with a longname
-// No value normalization is happening.
-func (flagSet *FlagSet) FileCommaSeparatedStringSliceVar(field *FileCommaSeparatedStringSlice, long string, defaultValue FileCommaSeparatedStringSlice, usage string) *FlagData {
-	for _, item := range defaultValue {
-		_ = field.Set(item)
-	}
-
-	flagSet.CommandLine.Var(field, long, usage)
-
-	flagData := &FlagData{
-		usage:        usage,
-		long:         long,
-		defaultValue: defaultValue,
-	}
-	flagSet.flagKeys.Set(long, flagData)
-	return flagData
-}
-
-// FileCommaSeparatedStringSliceVarP adds a string slice flag with a shortname and longname
-// No value normalization is happening.
-func (flagSet *FlagSet) FileCommaSeparatedStringSliceVarP(field *FileCommaSeparatedStringSlice, long, short string, defaultValue FileCommaSeparatedStringSlice, usage string) *FlagData {
-	for _, item := range defaultValue {
-		_ = field.Set(item)
-	}
-
-	flagSet.CommandLine.Var(field, short, usage)
-	flagSet.CommandLine.Var(field, long, usage)
-
-	flagData := &FlagData{
-		usage:        usage,
-		short:        short,
-		long:         long,
-		defaultValue: defaultValue,
-	}
-	flagSet.flagKeys.Set(short, flagData)
-	flagSet.flagKeys.Set(long, flagData)
-	return flagData
+func (flagSet *FlagSet) StringSliceVar(field *StringSlice, long string, defaultValue []string, usage string, options Options) *FlagData {
+	return flagSet.StringSliceVarP(field, long, "", defaultValue, usage, options)
 }
 
 // StringSliceVarConfigOnly adds a string slice config value (without flag) with a longname
-func (flagSet *FlagSet) StringSliceVarConfigOnly(field *StringSlice, long string, defaultValue StringSlice, usage string) *FlagData {
+func (flagSet *FlagSet) StringSliceVarConfigOnly(field *StringSlice, long string, defaultValue []string, usage string) *FlagData {
 	for _, item := range defaultValue {
 		_ = field.Set(item)
 	}
