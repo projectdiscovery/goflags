@@ -16,7 +16,7 @@ import (
 	"time"
 
 	"github.com/cnf/structhash"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 // FlagSet is a list of flags for an application
