@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -43,11 +44,13 @@ func TestConfigFileDataTypes(t *testing.T) {
 	var data2 StringSlice
 	var data3 int
 	var data4 bool
+	var data5 time.Duration
 
 	flagSet.StringVar(&data, "string-value", "", "Default value for a test flag example")
 	flagSet.StringSliceVar(&data2, "slice-value", []string{}, "String slice flag example value", StringSliceOptions)
 	flagSet.IntVar(&data3, "int-value", 0, "Int value example")
 	flagSet.BoolVar(&data4, "bool-value", false, "Bool value example")
+	flagSet.DurationVar(&data5, "duration-value", time.Hour, "Bool value example")
 
 	configFileData := `
 string-value: test
@@ -58,7 +61,8 @@ severity:
  - info
  - high
 int-value: 543
-bool-value: true`
+bool-value: true
+duration-value: 1h`
 	err := ioutil.WriteFile("test.yaml", []byte(configFileData), os.ModePerm)
 	require.Nil(t, err, "could not write temporary config")
 	defer os.Remove("test.yaml")
@@ -70,6 +74,7 @@ bool-value: true`
 	require.Equal(t, StringSlice{"test", "test2"}, data2, "could not get correct string slice")
 	require.Equal(t, 543, data3, "could not get correct int")
 	require.Equal(t, true, data4, "could not get correct bool")
+	require.Equal(t, time.Hour, data5, "could not get correct duration")
 
 	tearDown(t.Name())
 }

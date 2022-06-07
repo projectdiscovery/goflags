@@ -13,6 +13,7 @@ import (
 	"strconv"
 	"strings"
 	"text/tabwriter"
+	"time"
 
 	"github.com/cnf/structhash"
 	"gopkg.in/yaml.v2"
@@ -194,15 +195,17 @@ func (flagSet *FlagSet) readConfigFile(filePath string) error {
 		value := fl.Value.String()
 
 		if strings.EqualFold(fl.DefValue, value) && ok {
-			switch data := item.(type) {
+			switch itemValue := item.(type) {
 			case string:
-				_ = fl.Value.Set(data)
+				_ = fl.Value.Set(itemValue)
 			case bool:
-				_ = fl.Value.Set(strconv.FormatBool(data))
+				_ = fl.Value.Set(strconv.FormatBool(itemValue))
 			case int:
-				_ = fl.Value.Set(strconv.Itoa(data))
+				_ = fl.Value.Set(strconv.Itoa(itemValue))
+			case time.Duration:
+				_ = fl.Value.Set(itemValue.String())
 			case []interface{}:
-				for _, v := range data {
+				for _, v := range itemValue {
 					vStr, ok := v.(string)
 					if ok {
 						_ = fl.Value.Set(vStr)
@@ -412,6 +415,34 @@ func (flagSet *FlagSet) RuntimeMapVarP(field *RuntimeMap, long, short string, de
 		flagSet.flagKeys.Set(short, flagData)
 	}
 	flagSet.CommandLine.Var(field, long, usage)
+	flagSet.flagKeys.Set(long, flagData)
+	return flagData
+}
+
+// DurationVarP adds a duration flag with a shortname and longname
+func (flagSet *FlagSet) DurationVarP(field *time.Duration, long, short string, defaultValue time.Duration, usage string) *FlagData {
+	flagSet.CommandLine.DurationVar(field, short, defaultValue, usage)
+	flagSet.CommandLine.DurationVar(field, long, defaultValue, usage)
+
+	flagData := &FlagData{
+		usage:        usage,
+		short:        short,
+		long:         long,
+		defaultValue: defaultValue,
+	}
+	flagSet.flagKeys.Set(short, flagData)
+	flagSet.flagKeys.Set(long, flagData)
+	return flagData
+}
+
+// DurationVar adds a duration flag with a longname
+func (flagSet *FlagSet) DurationVar(field *time.Duration, long string, defaultValue time.Duration, usage string) *FlagData {
+	flagSet.CommandLine.DurationVar(field, long, defaultValue, usage)
+	flagData := &FlagData{
+		usage:        usage,
+		long:         long,
+		defaultValue: defaultValue,
+	}
 	flagSet.flagKeys.Set(long, flagData)
 	return flagData
 }
