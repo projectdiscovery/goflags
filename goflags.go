@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/cnf/structhash"
+	"github.com/projectdiscovery/fileutil"
 	"gopkg.in/yaml.v2"
 )
 
@@ -98,21 +99,16 @@ func (flagSet *FlagSet) Parse() error {
 	flagSet.CommandLine.Usage = flagSet.usageFunc
 	_ = flagSet.CommandLine.Parse(os.Args[1:])
 
-	appName := filepath.Base(os.Args[0])
-	// trim extension from app name
-	appName = strings.TrimSuffix(appName, filepath.Ext(appName))
-	homePath, err := os.UserHomeDir()
+	configFilePath, err := GetConfigFilePath()
 	if err != nil {
 		return err
 	}
-
-	config := filepath.Join(homePath, ".config", appName, "config.yaml")
-	_ = os.MkdirAll(filepath.Dir(config), os.ModePerm)
-	if _, err := os.Stat(config); os.IsNotExist(err) {
+	_ = os.MkdirAll(filepath.Dir(configFilePath), os.ModePerm)
+	if !fileutil.FileExists(configFilePath) {
 		configData := flagSet.generateDefaultConfig()
-		return ioutil.WriteFile(config, configData, os.ModePerm)
+		return ioutil.WriteFile(configFilePath, configData, os.ModePerm)
 	}
-	_ = flagSet.MergeConfigFile(config) // try to read default config after parsing flags
+	_ = flagSet.MergeConfigFile(configFilePath) // try to read default config after parsing flags
 	return nil
 }
 
