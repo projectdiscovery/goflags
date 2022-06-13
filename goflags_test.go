@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -29,7 +30,7 @@ func TestGenerateDefaultConfig(t *testing.T) {
 	var data string
 	var data2 StringSlice
 	flagSet.StringVar(&data, "test", "test-default-value", "Default value for a test flag example")
-	flagSet.StringSliceVar(&data2, "slice", []string{"item1", "item2"}, "String slice flag example value")
+	flagSet.StringSliceVar(&data2, "slice", []string{"item1", "item2"}, "String slice flag example value", StringSliceOptions)
 	defaultConfig := string(flagSet.generateDefaultConfig())
 	parts := strings.SplitN(defaultConfig, "\n", 2)
 
@@ -43,11 +44,13 @@ func TestConfigFileDataTypes(t *testing.T) {
 	var data2 StringSlice
 	var data3 int
 	var data4 bool
+	var data5 time.Duration
 
 	flagSet.StringVar(&data, "string-value", "", "Default value for a test flag example")
-	flagSet.StringSliceVar(&data2, "slice-value", []string{}, "String slice flag example value")
+	flagSet.StringSliceVar(&data2, "slice-value", []string{}, "String slice flag example value", StringSliceOptions)
 	flagSet.IntVar(&data3, "int-value", 0, "Int value example")
 	flagSet.BoolVar(&data4, "bool-value", false, "Bool value example")
+	flagSet.DurationVar(&data5, "duration-value", time.Hour, "Bool value example")
 
 	configFileData := `
 string-value: test
@@ -58,7 +61,8 @@ severity:
  - info
  - high
 int-value: 543
-bool-value: true`
+bool-value: true
+duration-value: 1h`
 	err := ioutil.WriteFile("test.yaml", []byte(configFileData), os.ModePerm)
 	require.Nil(t, err, "could not write temporary config")
 	defer os.Remove("test.yaml")
@@ -70,6 +74,7 @@ bool-value: true`
 	require.Equal(t, StringSlice{"test", "test2"}, data2, "could not get correct string slice")
 	require.Equal(t, 543, data3, "could not get correct int")
 	require.Equal(t, true, data4, "could not get correct bool")
+	require.Equal(t, time.Hour, data5, "could not get correct duration")
 
 	tearDown(t.Name())
 }
@@ -90,10 +95,10 @@ func TestUsageOrder(t *testing.T) {
 	flagSet.StringVarP(&stringData, "string-with-default-value2", "ts", "test-string", "String with default value example #2").Group("String")
 
 	flagSet.SetGroup("StringSlice", "StringSlice")
-	flagSet.StringSliceVar(&stringSliceData, "slice-value", []string{}, "String slice flag example value").Group("StringSlice")
-	flagSet.StringSliceVarP(&stringSliceData, "slice-value2", "sv", []string{}, "String slice flag example value #2").Group("StringSlice")
-	flagSet.StringSliceVar(&stringSliceData, "slice-with-default-value", []string{"a", "b", "c"}, "String slice flag with default example values").Group("StringSlice")
-	flagSet.StringSliceVarP(&stringSliceData2, "slice-with-default-value2", "swdf", []string{"a", "b", "c"}, "String slice flag with default example values #2").Group("StringSlice")
+	flagSet.StringSliceVar(&stringSliceData, "slice-value", []string{}, "String slice flag example value", StringSliceOptions).Group("StringSlice")
+	flagSet.StringSliceVarP(&stringSliceData, "slice-value2", "sv", []string{}, "String slice flag example value #2", StringSliceOptions).Group("StringSlice")
+	flagSet.StringSliceVar(&stringSliceData, "slice-with-default-value", []string{"a", "b", "c"}, "String slice flag with default example values", StringSliceOptions).Group("StringSlice")
+	flagSet.StringSliceVarP(&stringSliceData2, "slice-with-default-value2", "swdf", []string{"a", "b", "c"}, "String slice flag with default example values #2", StringSliceOptions).Group("StringSlice")
 
 	flagSet.SetGroup("Integer", "Integer")
 	flagSet.IntVar(&intData, "int-value", 0, "Int value example").Group("Integer")
@@ -210,14 +215,14 @@ func TestParseStringSlice(t *testing.T) {
 	flagSet := NewFlagSet()
 
 	var stringSlice StringSlice
-	flagSet.StringSliceVarP(&stringSlice, "header", "H", []string{}, "Header values. Expected usage: -H \"header1\":\"value1\" -H \"header2\":\"value2\"")
+	flagSet.StringSliceVarP(&stringSlice, "header", "H", []string{}, "Header values. Expected usage: -H \"header1\":\"value1\" -H \"header2\":\"value2\"", StringSliceOptions)
 
 	header1 := "\"header1:value1\""
 	header2 := "\" HEADER 2: VALUE2  \""
 	header3 := "\"header3\":\"value3, value4\""
 
 	os.Args = []string{
-		"./appName",
+		os.Args[0],
 		"-H", header1,
 		"-header", header2,
 		"-H", header3,
@@ -226,7 +231,86 @@ func TestParseStringSlice(t *testing.T) {
 	err := flagSet.Parse()
 	assert.Nil(t, err)
 
-	assert.Equal(t, stringSlice, StringSlice{header1, header2, header3})
+	assert.Equal(t, StringSlice{header1, header2, header3}, stringSlice)
+	tearDown(t.Name())
+
+}
+
+func TestParseCommaSeparatedStringSlice(t *testing.T) {
+	flagSet := NewFlagSet()
+
+	var csStringSlice StringSlice
+	flagSet.StringSliceVarP(&csStringSlice, "cs-value", "CSV", []string{}, "Comma Separated Values. Expected usage: -CSV value1,value2,value3", CommaSeparatedStringSliceOptions)
+
+	valueCommon := `value1,Value2 ",value3`
+	value1 := `value1`
+	value2 := `Value2 "`
+	value3 := `value3`
+
+	os.Args = []string{
+		os.Args[0],
+		"-CSV", valueCommon,
+	}
+
+	err := flagSet.Parse()
+	assert.Nil(t, err)
+
+	assert.Equal(t, csStringSlice, StringSlice{value1, value2, value3})
+	tearDown(t.Name())
+}
+
+func TestParseFileCommaSeparatedStringSlice(t *testing.T) {
+	flagSet := NewFlagSet()
+
+	var csStringSlice StringSlice
+	flagSet.StringSliceVarP(&csStringSlice, "cs-value", "CSV", []string{}, "Comma Separated Values. Expected usage: -CSV path/to/file", FileCommaSeparatedStringSliceOptions)
+
+	testFile := "test.txt"
+	value1 := `value1`
+	value2 := `Value2 "`
+	value3 := `value3`
+
+	testFileData := `value1
+Value2 "
+value3`
+	err := ioutil.WriteFile(testFile, []byte(testFileData), os.ModePerm)
+	require.Nil(t, err, "could not write temporary values file")
+	defer os.Remove(testFile)
+
+	os.Args = []string{
+		os.Args[0],
+		"-CSV", testFile,
+	}
+
+	err = flagSet.Parse()
+	assert.Nil(t, err)
+
+	assert.Equal(t, csStringSlice, StringSlice{value1, value2, value3})
+	tearDown(t.Name())
+}
+
+func TestConfigOnlyDataTypes(t *testing.T) {
+	flagSet := NewFlagSet()
+	var data StringSlice
+
+	flagSet.StringSliceVarConfigOnly(&data, "config-only", []string{}, "String slice config only flag example")
+
+	require.Nil(t, flagSet.CommandLine.Lookup("config-only"), "config-only flag should not be registered")
+
+	configFileData := `
+config-only:
+ - test
+ - test2
+ `
+	err := ioutil.WriteFile("test.yaml", []byte(configFileData), os.ModePerm)
+	require.Nil(t, err, "could not write temporary config")
+	defer os.Remove("test.yaml")
+
+	err = flagSet.MergeConfigFile("test.yaml")
+	require.Nil(t, err, "could not merge temporary config")
+
+	require.Equal(t, StringSlice{"test", "test2"}, data, "could not get correct string slice")
+	tearDown(t.Name())
 }
 
 func tearDown(uniqueValue string) { // sadly there is no official support for setup/teardown/test

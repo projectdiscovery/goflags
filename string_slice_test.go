@@ -44,7 +44,7 @@ func TestNormalizedStringSlicePositive(t *testing.T) {
 	}
 
 	for value, expected := range slices {
-		result, err := ToNormalizedStringSlice(value)
+		result, err := toStringSlice(value, NormalizedStringSliceOptions)
 		fmt.Println(result)
 		assert.Nil(t, err)
 		assert.Equal(t, result, expected)
@@ -61,8 +61,18 @@ func TestNormalizedStringSliceNegative(t *testing.T) {
 	}
 
 	for _, value := range slices {
-		result, err := ToNormalizedStringSlice(value)
+		result, err := toStringSlice(value, NormalizedStringSliceOptions)
 		assert.Nil(t, result)
 		assert.NotNil(t, err)
 	}
+}
+
+func TestNormalizedOriginalStringSlice(t *testing.T) {
+	result, err := toStringSlice("/Users/Home/Test/test.yaml", NormalizedOriginalStringSliceOptions)
+	assert.Nil(t, err)
+	assert.Equal(t, []string{"/Users/Home/Test/test.yaml"}, result, "could not get correct path")
+
+	result, err = toStringSlice("'test user'", NormalizedOriginalStringSliceOptions)
+	assert.Nil(t, err)
+	assert.Equal(t, []string{"test user"}, result, "could not get correct path")
 }
