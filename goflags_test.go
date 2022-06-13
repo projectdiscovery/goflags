@@ -30,7 +30,7 @@ func TestGenerateDefaultConfig(t *testing.T) {
 	var data string
 	var data2 StringSlice
 	flagSet.StringVar(&data, "test", "test-default-value", "Default value for a test flag example")
-	flagSet.StringSliceVar(&data2, "slice", []string{"item1", "item2"}, "String slice flag example value")
+	flagSet.StringSliceVar(&data2, "slice", []string{"item1", "item2"}, "String slice flag example value", StringSliceOptions)
 	defaultConfig := string(flagSet.generateDefaultConfig())
 	parts := strings.SplitN(defaultConfig, "\n", 2)
 
@@ -47,7 +47,7 @@ func TestConfigFileDataTypes(t *testing.T) {
 	var data5 time.Duration
 
 	flagSet.StringVar(&data, "string-value", "", "Default value for a test flag example")
-	flagSet.StringSliceVar(&data2, "slice-value", []string{}, "String slice flag example value")
+	flagSet.StringSliceVar(&data2, "slice-value", []string{}, "String slice flag example value", StringSliceOptions)
 	flagSet.IntVar(&data3, "int-value", 0, "Int value example")
 	flagSet.BoolVar(&data4, "bool-value", false, "Bool value example")
 	flagSet.DurationVar(&data5, "duration-value", time.Hour, "Bool value example")
@@ -95,10 +95,10 @@ func TestUsageOrder(t *testing.T) {
 	flagSet.StringVarP(&stringData, "string-with-default-value2", "ts", "test-string", "String with default value example #2").Group("String")
 
 	flagSet.SetGroup("StringSlice", "StringSlice")
-	flagSet.StringSliceVar(&stringSliceData, "slice-value", []string{}, "String slice flag example value").Group("StringSlice")
-	flagSet.StringSliceVarP(&stringSliceData, "slice-value2", "sv", []string{}, "String slice flag example value #2").Group("StringSlice")
-	flagSet.StringSliceVar(&stringSliceData, "slice-with-default-value", []string{"a", "b", "c"}, "String slice flag with default example values").Group("StringSlice")
-	flagSet.StringSliceVarP(&stringSliceData2, "slice-with-default-value2", "swdf", []string{"a", "b", "c"}, "String slice flag with default example values #2").Group("StringSlice")
+	flagSet.StringSliceVar(&stringSliceData, "slice-value", []string{}, "String slice flag example value", StringSliceOptions).Group("StringSlice")
+	flagSet.StringSliceVarP(&stringSliceData, "slice-value2", "sv", []string{}, "String slice flag example value #2", StringSliceOptions).Group("StringSlice")
+	flagSet.StringSliceVar(&stringSliceData, "slice-with-default-value", []string{"a", "b", "c"}, "String slice flag with default example values", StringSliceOptions).Group("StringSlice")
+	flagSet.StringSliceVarP(&stringSliceData2, "slice-with-default-value2", "swdf", []string{"a", "b", "c"}, "String slice flag with default example values #2", StringSliceOptions).Group("StringSlice")
 
 	flagSet.SetGroup("Integer", "Integer")
 	flagSet.IntVar(&intData, "int-value", 0, "Int value example").Group("Integer")
@@ -215,7 +215,7 @@ func TestParseStringSlice(t *testing.T) {
 	flagSet := NewFlagSet()
 
 	var stringSlice StringSlice
-	flagSet.StringSliceVarP(&stringSlice, "header", "H", []string{}, "Header values. Expected usage: -H \"header1\":\"value1\" -H \"header2\":\"value2\"")
+	flagSet.StringSliceVarP(&stringSlice, "header", "H", []string{}, "Header values. Expected usage: -H \"header1\":\"value1\" -H \"header2\":\"value2\"", StringSliceOptions)
 
 	header1 := "\"header1:value1\""
 	header2 := "\" HEADER 2: VALUE2  \""
@@ -231,15 +231,16 @@ func TestParseStringSlice(t *testing.T) {
 	err := flagSet.Parse()
 	assert.Nil(t, err)
 
-	assert.Equal(t, stringSlice, StringSlice{header1, header2, header3})
+	assert.Equal(t, StringSlice{header1, header2, header3}, stringSlice)
 	tearDown(t.Name())
 
 }
+
 func TestParseCommaSeparatedStringSlice(t *testing.T) {
 	flagSet := NewFlagSet()
 
-	var csStringSlice CommaSeparatedStringSlice
-	flagSet.CommaSeparatedStringSliceVarP(&csStringSlice, "cs-value", "CSV", []string{}, "Comma Separated Values. Expected usage: -CSV value1,value2,value3")
+	var csStringSlice StringSlice
+	flagSet.StringSliceVarP(&csStringSlice, "cs-value", "CSV", []string{}, "Comma Separated Values. Expected usage: -CSV value1,value2,value3", CommaSeparatedStringSliceOptions)
 
 	valueCommon := `value1,Value2 ",value3`
 	value1 := `value1`
@@ -254,15 +255,15 @@ func TestParseCommaSeparatedStringSlice(t *testing.T) {
 	err := flagSet.Parse()
 	assert.Nil(t, err)
 
-	assert.Equal(t, csStringSlice, CommaSeparatedStringSlice{value1, value2, value3})
+	assert.Equal(t, csStringSlice, StringSlice{value1, value2, value3})
 	tearDown(t.Name())
 }
 
 func TestParseFileCommaSeparatedStringSlice(t *testing.T) {
 	flagSet := NewFlagSet()
 
-	var csStringSlice FileCommaSeparatedStringSlice
-	flagSet.FileCommaSeparatedStringSliceVarP(&csStringSlice, "cs-value", "CSV", []string{}, "Comma Separated Values. Expected usage: -CSV path/to/file")
+	var csStringSlice StringSlice
+	flagSet.StringSliceVarP(&csStringSlice, "cs-value", "CSV", []string{}, "Comma Separated Values. Expected usage: -CSV path/to/file", FileCommaSeparatedStringSliceOptions)
 
 	testFile := "test.txt"
 	value1 := `value1`
@@ -284,7 +285,7 @@ value3`
 	err = flagSet.Parse()
 	assert.Nil(t, err)
 
-	assert.Equal(t, csStringSlice, FileCommaSeparatedStringSlice{value1, value2, value3})
+	assert.Equal(t, csStringSlice, StringSlice{value1, value2, value3})
 	tearDown(t.Name())
 }
 
