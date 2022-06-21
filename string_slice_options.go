@@ -20,7 +20,11 @@ var CommaSeparatedStringSliceOptions = Options{
 // Tokenization: Comma
 // Normalization: None
 // Type: []string
-// Example: -flag test.txt # with test.txt containing on multiple lines value1 and nvalue2 => {"value1", "value2"}
+// test.txt content:
+// value1
+// value2
+//
+// Example: -flag test.txt => {"value1", "value2"}
 var FileCommaSeparatedStringSliceOptions = Options{
 	IsEmpty:    isEmpty,
 	IsFromFile: func(s string) bool { return true },
@@ -30,7 +34,7 @@ var FileCommaSeparatedStringSliceOptions = Options{
 // Tokenization: None
 // Normalization: Standard
 // Type: []string
-// Example: -flag /value/1 -flag value2 => {"/value/1", "value2"}
+// Example: -flag /value/1 -flag 'value2' => {"/value/1", "value2"}
 var NormalizedOriginalStringSliceOptions = Options{
 	IsEmpty:   isEmpty,
 	Normalize: normalize,

@@ -2,6 +2,7 @@ package goflags
 
 import (
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -75,4 +76,24 @@ func TestNormalizedOriginalStringSlice(t *testing.T) {
 	result, err = toStringSlice("'test user'", NormalizedOriginalStringSliceOptions)
 	assert.Nil(t, err)
 	assert.Equal(t, []string{"test user"}, result, "could not get correct path")
+}
+
+func TestFileNormalizedStringSliceOptions(t *testing.T) {
+	result, err := toStringSlice("/Users/Home/Test/test.yaml", FileNormalizedStringSliceOptions)
+	assert.Nil(t, err)
+	assert.Equal(t, []string{"/users/home/test/test.yaml"}, result, "could not get correct path")
+
+	result, err = toStringSlice("'Test User'", FileNormalizedStringSliceOptions)
+	assert.Nil(t, err)
+	assert.Equal(t, []string{"test user"}, result, "could not get correct path")
+}
+
+func TestFileStringSliceOptions(t *testing.T) {
+	filename := "test.txt"
+	os.WriteFile(filename, []byte("value1,value2\nvalue3"), 0644)
+	defer os.RemoveAll(filename)
+
+	result, err := toStringSlice(filename, FileStringSliceOptions)
+	assert.Nil(t, err)
+	assert.Equal(t, []string{"value1,value2", "value3"}, result, "could not get correct path")
 }
