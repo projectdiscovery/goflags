@@ -7,7 +7,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/projectdiscovery/fileutil v0.0.0-20210928100737-cab279c5d4b5
 	github.com/projectdiscovery/stringsutil v0.0.0-20210804142656-fd3c28dbaafe
-	github.com/stretchr/testify v1.7.2
+	github.com/stretchr/testify v1.7.4
 	gopkg.in/yaml.v3 v3.0.1
 )
 
