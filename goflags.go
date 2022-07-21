@@ -484,7 +484,7 @@ func (flagSet *FlagSet) usageFunc() {
 
 func (flagSet *FlagSet) getGroupbyName(name string) groupData {
 	for _, group := range flagSet.groups {
-		if group.name == name {
+		if strings.EqualFold(group.name, name) || strings.EqualFold(group.description, name) {
 			return group
 		}
 	}
