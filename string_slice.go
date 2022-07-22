@@ -15,7 +15,7 @@ func (stringSlice *StringSlice) Set(value string) error {
 	if !ok {
 		option = StringSliceOptions
 	}
-	values, err := toStringSlice(value, option)
+	values, err := ToStringSlice(value, option)
 	if err != nil {
 		return err
 	}

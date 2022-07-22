@@ -51,7 +51,8 @@ type Options struct {
 	Normalize  func(string) string
 }
 
-func toStringSlice(value string, options Options) ([]string, error) {
+// ToStringSlice converts a value to string slice based on options
+func ToStringSlice(value string, options Options) ([]string, error) {
 	var result []string
 	if options.IsEmpty == nil && options.IsFromFile == nil && options.Normalize == nil {
 		return []string{value}, nil
