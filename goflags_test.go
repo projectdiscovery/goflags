@@ -115,6 +115,10 @@ func TestUsageOrder(t *testing.T) {
 	output := &bytes.Buffer{}
 	flagSet.CommandLine.SetOutput(output)
 
+	os.Args = []string{
+		os.Args[0],
+		"-h",
+	}
 	flagSet.usageFunc()
 
 	resultOutput := output.String()

@@ -16,8 +16,8 @@ import (
 	"time"
 
 	"github.com/cnf/structhash"
-	"gopkg.in/yaml.v3"
 	"github.com/projectdiscovery/fileutil"
+	"gopkg.in/yaml.v3"
 )
 
 // FlagSet is a list of flags for an application
@@ -55,6 +55,7 @@ func (flagData *FlagData) Group(name string) {
 
 // NewFlagSet creates a new flagSet structure for the application
 func NewFlagSet() *FlagSet {
+	flag.CommandLine.ErrorHandling()
 	return &FlagSet{
 		flagKeys:              newInsertionOrderedMap(),
 		OtherOptionsGroupName: "other options",
@@ -344,7 +345,7 @@ func (flagSet *FlagSet) StringSliceVarP(field *StringSlice, long, short string, 
 	optionMap[field] = options
 	for _, defaultItem := range defaultValue {
 		_ = field.Set(defaultItem)
-		values, _ := toStringSlice(defaultItem, options)
+		values, _ := ToStringSlice(defaultItem, options)
 		for _, value := range values {
 			_ = field.Set(value)
 		}
@@ -444,6 +445,19 @@ func (flagSet *FlagSet) DurationVar(field *time.Duration, long string, defaultVa
 }
 
 func (flagSet *FlagSet) usageFunc() {
+	var helpAsked bool
+
+	// Only show help usage if asked by user
+	for _, arg := range os.Args {
+		argStripped := strings.Trim(arg, "-")
+		if argStripped == "h" || argStripped == "help" {
+			helpAsked = true
+		}
+	}
+	if !helpAsked {
+		return
+	}
+
 	cliOutput := flagSet.CommandLine.Output()
 	fmt.Fprintf(cliOutput, "%s\n\n", flagSet.description)
 	fmt.Fprintf(cliOutput, "Usage:\n  %s [flags]\n\n", os.Args[0])
@@ -451,11 +465,30 @@ func (flagSet *FlagSet) usageFunc() {
 
 	writer := tabwriter.NewWriter(cliOutput, 0, 0, 1, ' ', 0)
 
+	// If user has specified group with help and we have groups, return
+	// with it's usage function
+	if len(flagSet.groups) > 0 && len(os.Args) == 3 {
+		group := flagSet.getGroupbyName(strings.ToLower(os.Args[2]))
+		if group.name != "" {
+			flagSet.displayGroupUsageFunc(newUniqueDeduper(), group, cliOutput, writer)
+			return
+		}
+	}
+
 	if len(flagSet.groups) > 0 {
 		flagSet.usageFuncForGroups(cliOutput, writer)
 	} else {
 		flagSet.usageFuncInternal(writer)
 	}
+}
+
+func (flagSet *FlagSet) getGroupbyName(name string) groupData {
+	for _, group := range flagSet.groups {
+		if strings.EqualFold(group.name, name) || strings.EqualFold(group.description, name) {
+			return group
+		}
+	}
+	return groupData{}
 }
 
 // usageFuncInternal prints usage for command line flags
@@ -480,31 +513,7 @@ func (flagSet *FlagSet) usageFuncForGroups(cliOutput io.Writer, writer *tabwrite
 
 	var otherOptions []string
 	for _, group := range flagSet.groups {
-		fmt.Fprintf(cliOutput, "%s:\n", normalizeGroupDescription(group.description))
-
-		flagSet.flagKeys.forEach(func(key string, data *FlagData) {
-			if currentFlag := flagSet.CommandLine.Lookup(key); currentFlag != nil {
-
-				if data.group == "" {
-					if !uniqueDeduper.isUnique(data) {
-						return
-					}
-					otherOptions = append(otherOptions, createUsageString(data, currentFlag))
-					return
-				}
-				// Ignore the flag if it's not in our intended group
-				if !strings.EqualFold(data.group, group.name) {
-					return
-				}
-				if !uniqueDeduper.isUnique(data) {
-					return
-				}
-				result := createUsageString(data, currentFlag)
-				fmt.Fprint(writer, result, "\n")
-			}
-		})
-		writer.Flush()
-		fmt.Printf("\n")
+		otherOptions = append(otherOptions, flagSet.displayGroupUsageFunc(uniqueDeduper, group, cliOutput, writer)...)
 	}
 
 	// Print Any additional flag that may have been left
@@ -516,6 +525,36 @@ func (flagSet *FlagSet) usageFuncForGroups(cliOutput io.Writer, writer *tabwrite
 		}
 		writer.Flush()
 	}
+}
+
+// displayGroupUsageFunc displays usage for a group
+func (flagSet *FlagSet) displayGroupUsageFunc(uniqueDeduper *uniqueDeduper, group groupData, cliOutput io.Writer, writer *tabwriter.Writer) []string {
+	fmt.Fprintf(cliOutput, "%s:\n", normalizeGroupDescription(group.description))
+
+	var otherOptions []string
+	flagSet.flagKeys.forEach(func(key string, data *FlagData) {
+		if currentFlag := flagSet.CommandLine.Lookup(key); currentFlag != nil {
+			if data.group == "" {
+				if !uniqueDeduper.isUnique(data) {
+					return
+				}
+				otherOptions = append(otherOptions, createUsageString(data, currentFlag))
+				return
+			}
+			// Ignore the flag if it's not in our intended group
+			if !strings.EqualFold(data.group, group.name) {
+				return
+			}
+			if !uniqueDeduper.isUnique(data) {
+				return
+			}
+			result := createUsageString(data, currentFlag)
+			fmt.Fprint(writer, result, "\n")
+		}
+	})
+	writer.Flush()
+	fmt.Printf("\n")
+	return otherOptions
 }
 
 type uniqueDeduper struct {
