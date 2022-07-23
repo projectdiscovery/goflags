@@ -30,6 +30,8 @@ The following types are supported by the goflags library. The `<name>P` suffix m
 | DurationVarP             | Time Duration value with long short name                            |
 | IntVar                   | Integer value with long name                                        |
 | IntVarP                  | Integer value with long short name                                  |
+| PortVar                  | Port value with long name											 |
+| PortVarP                 | Port value with long short name									 |
 | RuntimeMapVar            | Map value with long name                                            |
 | RuntimeMapVarP           | Map value with long short name                                      |
 | StringSliceVar           | String Slice value with long name and options                       |

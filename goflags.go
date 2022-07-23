@@ -16,8 +16,8 @@ import (
 	"time"
 
 	"github.com/cnf/structhash"
-	"gopkg.in/yaml.v3"
 	"github.com/projectdiscovery/fileutil"
+	"gopkg.in/yaml.v3"
 )
 
 // FlagSet is a list of flags for an application
@@ -394,6 +394,34 @@ func (flagSet *FlagSet) RuntimeMapVar(field *RuntimeMap, long string, defaultVal
 
 // RuntimeMapVarP adds a runtime only map flag with a shortname and longname
 func (flagSet *FlagSet) RuntimeMapVarP(field *RuntimeMap, long, short string, defaultValue []string, usage string) *FlagData {
+	for _, item := range defaultValue {
+		_ = field.Set(item)
+	}
+
+	flagData := &FlagData{
+		usage:        usage,
+		long:         long,
+		defaultValue: defaultValue,
+		skipMarshal:  true,
+	}
+
+	if short != "" {
+		flagData.short = short
+		flagSet.CommandLine.Var(field, short, usage)
+		flagSet.flagKeys.Set(short, flagData)
+	}
+	flagSet.CommandLine.Var(field, long, usage)
+	flagSet.flagKeys.Set(long, flagData)
+	return flagData
+}
+
+// PortVar adds a port flag with a longname
+func (flagSet *FlagSet) PortVar(field *Port, long string, defaultValue []string, usage string) *FlagData {
+	return flagSet.PortVarP(field, long, "", defaultValue, usage)
+}
+
+// PortVarP adds a port flag with a shortname and longname
+func (flagSet *FlagSet) PortVarP(field *Port, long, short string, defaultValue []string, usage string) *FlagData {
 	for _, item := range defaultValue {
 		_ = field.Set(item)
 	}
