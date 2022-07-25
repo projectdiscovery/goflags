@@ -105,3 +105,4 @@ func main() {
 ### Thanks
 
 1. spf13/cobra - For the very nice usage template for the command line.
+2. nmap/nmap - For the service-port mapping and top-ports list.
