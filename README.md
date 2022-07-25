@@ -30,6 +30,8 @@ The following types are supported by the goflags library. The `<name>P` suffix m
 | DurationVarP             | Time Duration value with long short name                            |
 | IntVar                   | Integer value with long name                                        |
 | IntVarP                  | Integer value with long short name                                  |
+| PortVar                  | Port value with long name											 |
+| PortVarP                 | Port value with long short name									 |
 | RuntimeMapVar            | Map value with long name                                            |
 | RuntimeMapVarP           | Map value with long short name                                      |
 | StringSliceVar           | String Slice value with long name and options                       |
@@ -103,3 +105,4 @@ func main() {
 ### Thanks
 
 1. spf13/cobra - For the very nice usage template for the command line.
+2. nmap/nmap - For the service-port mapping and top-ports list.
