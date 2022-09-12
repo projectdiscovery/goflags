@@ -109,6 +109,10 @@ func isEmpty(s string) bool {
 	return strings.TrimSpace(s) == ""
 }
 
+func isFromFile(_ string) bool {
+	return true
+}
+
 func normalizeTrailingParts(s string) string {
 	return strings.TrimSpace(s)
 }
