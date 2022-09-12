@@ -416,6 +416,34 @@ func (flagSet *FlagSet) RuntimeMapVarP(field *RuntimeMap, long, short string, de
 	return flagData
 }
 
+// PortVar adds a port flag with a longname
+func (flagSet *FlagSet) PortVar(field *Port, long string, defaultValue []string, usage string) *FlagData {
+	return flagSet.PortVarP(field, long, "", defaultValue, usage)
+}
+
+// PortVarP adds a port flag with a shortname and longname
+func (flagSet *FlagSet) PortVarP(field *Port, long, short string, defaultValue []string, usage string) *FlagData {
+	for _, item := range defaultValue {
+		_ = field.Set(item)
+	}
+
+	flagData := &FlagData{
+		usage:        usage,
+		long:         long,
+		defaultValue: defaultValue,
+		skipMarshal:  true,
+	}
+
+	if short != "" {
+		flagData.short = short
+		flagSet.CommandLine.Var(field, short, usage)
+		flagSet.flagKeys.Set(short, flagData)
+	}
+	flagSet.CommandLine.Var(field, long, usage)
+	flagSet.flagKeys.Set(long, flagData)
+	return flagData
+}
+
 // DurationVarP adds a duration flag with a shortname and longname
 func (flagSet *FlagSet) DurationVarP(field *time.Duration, long, short string, defaultValue time.Duration, usage string) *FlagData {
 	flagSet.CommandLine.DurationVar(field, short, defaultValue, usage)

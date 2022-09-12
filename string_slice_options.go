@@ -27,7 +27,7 @@ var CommaSeparatedStringSliceOptions = Options{
 // Example: -flag test.txt => {"value1", "value2"}
 var FileCommaSeparatedStringSliceOptions = Options{
 	IsEmpty:    isEmpty,
-	IsFromFile: func(s string) bool { return true },
+	IsFromFile: isFromFile,
 }
 
 // NormalizedOriginalStringSliceOptions represents a list of items
@@ -48,7 +48,7 @@ var NormalizedOriginalStringSliceOptions = Options{
 var FileNormalizedStringSliceOptions = Options{
 	IsEmpty:    isEmpty,
 	Normalize:  normalizeLowercase,
-	IsFromFile: func(s string) bool { return true },
+	IsFromFile: isFromFile,
 }
 
 // FileStringSliceOptions represents a list of items stored in a file
@@ -57,7 +57,7 @@ var FileNormalizedStringSliceOptions = Options{
 var FileStringSliceOptions = Options{
 	IsEmpty:    isEmpty,
 	Normalize:  normalizeTrailingParts,
-	IsFromFile: func(s string) bool { return true },
+	IsFromFile: isFromFile,
 }
 
 // NormalizedStringSliceOptions represents a list of items
@@ -66,4 +66,13 @@ var FileStringSliceOptions = Options{
 var NormalizedStringSliceOptions = Options{
 	IsEmpty:   isEmpty,
 	Normalize: normalizeLowercase,
+}
+
+// FileNormalizedOriginalStringSliceOptions represents a list of items stored in a file
+// Tokenization: Comma
+// Normalization: Standard
+var FileNormalizedOriginalStringSliceOptions = Options{
+	IsEmpty:    isEmpty,
+	Normalize:  normalize,
+	IsFromFile: isFromFile,
 }

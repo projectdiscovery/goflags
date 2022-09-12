@@ -97,3 +97,13 @@ func TestFileStringSliceOptions(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, []string{"value1,value2", "value3"}, result, "could not get correct path")
 }
+
+func TestFileNormalizedOriginalStringSliceOptions(t *testing.T) {
+	result, err := ToStringSlice("/Users/Home/Test/test.yaml", FileNormalizedOriginalStringSliceOptions)
+	assert.Nil(t, err)
+	assert.Equal(t, []string{"/Users/Home/Test/test.yaml"}, result, "could not get correct path")
+
+	result, err = ToStringSlice("'Test User'", FileNormalizedOriginalStringSliceOptions)
+	assert.Nil(t, err)
+	assert.Equal(t, []string{"Test User"}, result, "could not get correct path")
+}
