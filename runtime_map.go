@@ -35,7 +35,14 @@ func (runtimeMap *RuntimeMap) Set(value string) error {
 	if runtimeMap.kv == nil {
 		runtimeMap.kv = make(map[string]interface{})
 	}
-	k, v := stringsutil.Before(value, kvSep), stringsutil.After(value, kvSep)
+	k, err := stringsutil.Before(value, kvSep)
+	if err != nil {
+		return err
+	}
+	v, _ := stringsutil.After(value, kvSep)
+	if err != nil {
+		return err
+	}
 	// note:
 	// - inserting multiple times the same key will override the previous value
 	// - empty string is legitimate value
