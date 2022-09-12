@@ -39,7 +39,7 @@ func (runtimeMap *RuntimeMap) Set(value string) error {
 	if err != nil {
 		return err
 	}
-	v, _ := stringsutil.After(value, kvSep)
+	v, err := stringsutil.After(value, kvSep)
 	if err != nil {
 		return err
 	}
