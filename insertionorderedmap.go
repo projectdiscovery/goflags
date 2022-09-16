@@ -18,3 +18,7 @@ func (insertionOrderedMap *InsertionOrderedMap) Set(key string, value *FlagData)
 		insertionOrderedMap.keys = append(insertionOrderedMap.keys, key)
 	}
 }
+
+func (InsertionOrderedMap *InsertionOrderedMap) all() []string {
+	return InsertionOrderedMap.keys
+}
