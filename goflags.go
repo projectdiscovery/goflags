@@ -22,11 +22,12 @@ import (
 
 // FlagSet is a list of flags for an application
 type FlagSet struct {
-	Marshal     bool
-	description string
-	flagKeys    InsertionOrderedMap
-	groups      []groupData
-	CommandLine *flag.FlagSet
+	Marshal        bool
+	description    string
+	flagKeys       InsertionOrderedMap
+	groups         []groupData
+	CommandLine    *flag.FlagSet
+	configFilePath string
 
 	// OtherOptionsGroupName is the name for all flags not in a group
 	OtherOptionsGroupName string
@@ -97,7 +98,7 @@ func (flagSet *FlagSet) Parse() error {
 	flagSet.CommandLine.Usage = flagSet.usageFunc
 	_ = flagSet.CommandLine.Parse(os.Args[1:])
 
-	configFilePath, err := GetConfigFilePath()
+	configFilePath, err := flagSet.GetConfigFilePath()
 	if err != nil {
 		return err
 	}
