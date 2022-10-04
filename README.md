@@ -42,6 +42,8 @@ The following types are supported by the goflags library. The `<name>P` suffix m
 | StringVarP               | String value with long short name                                   |
 | Var                      | Custom value with long name implementing flag.Value interface       |
 | VarP                     | Custom value with long short name implementing flag.Value interface |
+| EnumVar                  | Enum value with long name                                           |
+| EnumVarP                 | Enum value with long short name                                     |
 
 ### String Slice Options
 
@@ -76,12 +78,20 @@ type options struct {
 	values goflags.RuntimeMap
 }
 
+const (
+	Nil goflags.EnumVariable = iota
+	Type1
+	Type2
+)
+
 func main() {
+	enumAllowedTypes := goflags.AllowdTypes{"type1": Type1, "type2": Type2}
 	opt := &options{}
 
 	flagSet := goflags.NewFlagSet()
 	flagSet.SetDescription("Test program to demonstrate goflags options")
 
+	flagSet.EnumVarP(&options.Type, "enum-type", "et", Nil, "Variable Type (type1/type2)", enumAllowedTypes)
 	flagSet.BoolVar(&opt.silent, "silent", true, "show silent output")
 	flagSet.StringSliceVarP(&opt.inputs, "inputs", "i", nil, "list of inputs (file,comma-separated)", goflags.FileCommaSeparatedStringSliceOptions)
 

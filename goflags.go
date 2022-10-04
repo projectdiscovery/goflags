@@ -22,11 +22,12 @@ import (
 
 // FlagSet is a list of flags for an application
 type FlagSet struct {
-	Marshal     bool
-	description string
-	flagKeys    InsertionOrderedMap
-	groups      []groupData
-	CommandLine *flag.FlagSet
+	Marshal        bool
+	description    string
+	flagKeys       InsertionOrderedMap
+	groups         []groupData
+	CommandLine    *flag.FlagSet
+	configFilePath string
 
 	// OtherOptionsGroupName is the name for all flags not in a group
 	OtherOptionsGroupName string
@@ -97,7 +98,7 @@ func (flagSet *FlagSet) Parse() error {
 	flagSet.CommandLine.Usage = flagSet.usageFunc
 	_ = flagSet.CommandLine.Parse(os.Args[1:])
 
-	configFilePath, err := GetConfigFilePath()
+	configFilePath, err := flagSet.GetConfigFilePath()
 	if err != nil {
 		return err
 	}
@@ -468,6 +469,33 @@ func (flagSet *FlagSet) DurationVar(field *time.Duration, long string, defaultVa
 		long:         long,
 		defaultValue: defaultValue,
 	}
+	flagSet.flagKeys.Set(long, flagData)
+	return flagData
+}
+
+// EnumVar adds a enum flag with a longname
+func (flagSet *FlagSet) EnumVar(field *string, long string, defaultValue EnumVariable, usage string, allowedTypes AllowdTypes) *FlagData {
+	return flagSet.EnumVarP(field, long, "", defaultValue, usage, allowedTypes)
+}
+
+// EnumVarP adds a enum flag with a shortname and longname
+func (flagSet *FlagSet) EnumVarP(field *string, long, short string, defaultValue EnumVariable, usage string, allowedTypes AllowdTypes) *FlagData {
+	for k, v := range allowedTypes {
+		if v == defaultValue {
+			*field = k
+		}
+	}
+	flagData := &FlagData{
+		usage:        usage,
+		long:         long,
+		defaultValue: defaultValue,
+	}
+	if short != "" {
+		flagData.short = short
+		flagSet.CommandLine.Var(&EnumVar{allowedTypes, field}, short, usage)
+		flagSet.flagKeys.Set(short, flagData)
+	}
+	flagSet.CommandLine.Var(&EnumVar{allowedTypes, field}, long, usage)
 	flagSet.flagKeys.Set(long, flagData)
 	return flagData
 }
