@@ -27,7 +27,10 @@ type EnumVar struct {
 }
 
 func (e *EnumVar) String() string {
-	return *e.value
+	if e.value != nil {
+		return *e.value
+	}
+	return ""
 }
 
 func (e *EnumVar) Set(value string) error {
