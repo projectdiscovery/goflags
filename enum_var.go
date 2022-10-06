@@ -27,7 +27,7 @@ type EnumVar struct {
 }
 
 func (e *EnumVar) String() string {
-	if e != nil && e.value != nil {
+	if e.value != nil {
 		return *e.value
 	}
 	return ""
