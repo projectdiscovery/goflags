@@ -95,9 +95,7 @@ func (flagSet *FlagSet) MergeConfigFile(file string) error {
 
 // Parse parses the flags provided to the library.
 func (flagSet *FlagSet) Parse() error {
-
 	flagSet.CommandLine.SetOutput(os.Stdout)
-
 	flagSet.CommandLine.Usage = flagSet.usageFunc
 	_ = flagSet.CommandLine.Parse(os.Args[1:])
 
@@ -516,6 +514,7 @@ func (flagSet *FlagSet) usageFunc() {
 	if !helpAsked {
 		return
 	}
+
 	cliOutput := flagSet.CommandLine.Output()
 	fmt.Fprintf(cliOutput, "%s\n\n", flagSet.description)
 	fmt.Fprintf(cliOutput, "Usage:\n  %s [flags]\n\n", os.Args[0])
