@@ -524,12 +524,6 @@ func (flagSet *FlagSet) usageFunc() {
 	// If user has specified group with help and we have groups, return
 	// with it's usage function
 	if len(flagSet.groups) > 0 && len(os.Args) == 3 {
-		if os.Args[2] == "search" {
-			if err := flagSet.searchUsageFunc(); err != nil {
-				fmt.Fprintf(cliOutput, "Error: %s\n", err)
-				return
-			}
-		}
 		group := flagSet.getGroupbyName(strings.ToLower(os.Args[2]))
 		if group.name != "" {
 			flagSet.displayGroupUsageFunc(newUniqueDeduper(), group, cliOutput, writer)
