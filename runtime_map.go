@@ -38,7 +38,7 @@ func (runtimeMap *RuntimeMap) Set(value string) error {
 	var k, v string
 	if idxSep := strings.Index(value, kvSep); idxSep > 0 {
 		k = value[:idxSep]
-		v = value[idxSep:]
+		v = value[idxSep+1:]
 	}
 	// note:
 	// - inserting multiple times the same key will override the previous value
