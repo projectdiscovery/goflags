@@ -3,7 +3,6 @@ package goflags
 import (
 	"bytes"
 	"flag"
-	"io/ioutil"
 	"os"
 	"reflect"
 	"strconv"
@@ -63,7 +62,7 @@ severity:
 int-value: 543
 bool-value: true
 duration-value: 1h`
-	err := ioutil.WriteFile("test.yaml", []byte(configFileData), os.ModePerm)
+	err := os.WriteFile("test.yaml", []byte(configFileData), os.ModePerm)
 	require.Nil(t, err, "could not write temporary config")
 	defer os.Remove("test.yaml")
 
@@ -277,7 +276,7 @@ func TestParseFileCommaSeparatedStringSlice(t *testing.T) {
 	testFileData := `value1
 Value2 "
 value3`
-	err := ioutil.WriteFile(testFile, []byte(testFileData), os.ModePerm)
+	err := os.WriteFile(testFile, []byte(testFileData), os.ModePerm)
 	require.Nil(t, err, "could not write temporary values file")
 	defer os.Remove(testFile)
 
@@ -306,7 +305,7 @@ config-only:
  - test
  - test2
  `
-	err := ioutil.WriteFile("test.yaml", []byte(configFileData), os.ModePerm)
+	err := os.WriteFile("test.yaml", []byte(configFileData), os.ModePerm)
 	require.Nil(t, err, "could not write temporary config")
 	defer os.Remove("test.yaml")
 
