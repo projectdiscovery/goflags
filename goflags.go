@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -106,7 +105,7 @@ func (flagSet *FlagSet) Parse() error {
 	_ = os.MkdirAll(filepath.Dir(configFilePath), os.ModePerm)
 	if !fileutil.FileExists(configFilePath) {
 		configData := flagSet.generateDefaultConfig()
-		return ioutil.WriteFile(configFilePath, configData, os.ModePerm)
+		return os.WriteFile(configFilePath, configData, os.ModePerm)
 	}
 	_ = flagSet.MergeConfigFile(configFilePath) // try to read default config after parsing flags
 	return nil
@@ -530,6 +529,11 @@ func (flagSet *FlagSet) usageFunc() {
 			flagSet.displayGroupUsageFunc(newUniqueDeduper(), group, cliOutput, writer)
 			return
 		}
+		flag := flagSet.getFlagByName(strings.ToLower(os.Args[2]))
+		if flag != nil {
+			flagSet.displaySingleFlagUsageFunc(os.Args[2], flag, cliOutput, writer)
+			return
+		}
 	}
 
 	if len(flagSet.groups) > 0 {
@@ -546,6 +550,17 @@ func (flagSet *FlagSet) getGroupbyName(name string) groupData {
 		}
 	}
 	return groupData{}
+}
+
+func (flagSet *FlagSet) getFlagByName(name string) *FlagData {
+	var flagData *FlagData
+	flagSet.flagKeys.forEach(func(key string, data *FlagData) {
+		if strings.EqualFold(data.long, name) || strings.EqualFold(data.short, name) {
+			flagData = data
+			return
+		}
+	})
+	return flagData
 }
 
 // usageFuncInternal prints usage for command line flags
@@ -612,6 +627,15 @@ func (flagSet *FlagSet) displayGroupUsageFunc(uniqueDeduper *uniqueDeduper, grou
 	writer.Flush()
 	fmt.Printf("\n")
 	return otherOptions
+}
+
+// displaySingleFlagUsageFunc displays usage for a single flag
+func (flagSet *FlagSet) displaySingleFlagUsageFunc(name string, data *FlagData, cliOutput io.Writer, writer *tabwriter.Writer) {
+	if currentFlag := flagSet.CommandLine.Lookup(name); currentFlag != nil {
+		result := createUsageString(data, currentFlag)
+		fmt.Fprint(writer, result, "\n")
+		writer.Flush()
+	}
 }
 
 type uniqueDeduper struct {
