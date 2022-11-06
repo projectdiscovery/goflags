@@ -15,7 +15,7 @@ import (
 	"time"
 
 	"github.com/cnf/structhash"
-	"github.com/projectdiscovery/fileutil"
+	fileutil "github.com/projectdiscovery/utils/file"
 	"gopkg.in/yaml.v3"
 )
 
@@ -345,7 +345,6 @@ func (flagSet *FlagSet) IntVar(field *int, long string, defaultValue int, usage 
 func (flagSet *FlagSet) StringSliceVarP(field *StringSlice, long, short string, defaultValue StringSlice, usage string, options Options) *FlagData {
 	optionMap[field] = options
 	for _, defaultItem := range defaultValue {
-		_ = field.Set(defaultItem)
 		values, _ := ToStringSlice(defaultItem, options)
 		for _, value := range values {
 			_ = field.Set(value)

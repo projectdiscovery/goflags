@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/projectdiscovery/fileutil"
+	fileutil "github.com/projectdiscovery/utils/file"
 )
 
 var quotes = []rune{'"', '\'', '`'}
