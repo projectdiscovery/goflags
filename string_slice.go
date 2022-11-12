@@ -7,10 +7,17 @@ func init() {
 }
 
 // StringSlice is a slice of strings
-type StringSlice []string
+type StringSlice struct {
+	Value   []string
+	Default bool
+}
 
 // Set appends a value to the string slice.
 func (stringSlice *StringSlice) Set(value string) error {
+	if stringSlice.Default {
+		stringSlice.Value = []string{}
+		stringSlice.Default = false
+	}
 	option, ok := optionMap[stringSlice]
 	if !ok {
 		option = StringSliceOptions
@@ -19,10 +26,10 @@ func (stringSlice *StringSlice) Set(value string) error {
 	if err != nil {
 		return err
 	}
-	*stringSlice = append(*stringSlice, values...)
+	stringSlice.Value = append(stringSlice.Value, values...)
 	return nil
 }
 
 func (stringSlice StringSlice) String() string {
-	return ToString(stringSlice)
+	return ToString(stringSlice.Value)
 }

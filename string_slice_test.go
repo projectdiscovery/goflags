@@ -48,7 +48,7 @@ func TestNormalizedStringSlicePositive(t *testing.T) {
 		result, err := ToStringSlice(value, NormalizedStringSliceOptions)
 		fmt.Println(result)
 		assert.Nil(t, err)
-		assert.Equal(t, result, expected)
+		assert.Equal(t, expected, result)
 	}
 }
 

@@ -25,7 +25,7 @@ func TestEnumVarPositive(t *testing.T) {
 	}
 	err := flagSet.Parse()
 	assert.Nil(t, err)
-	assert.Equal(t, enumString, "type1")
+	assert.Equal(t, "type1", enumString)
 	tearDown(t.Name())
 }
 

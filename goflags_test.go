@@ -70,7 +70,7 @@ duration-value: 1h`
 	require.Nil(t, err, "could not merge temporary config")
 
 	require.Equal(t, "test", data, "could not get correct string")
-	require.Equal(t, StringSlice{"test", "test2"}, data2, "could not get correct string slice")
+	require.Equal(t, StringSlice{Value: []string{"test", "test2"}}, data2, "could not get correct string slice")
 	require.Equal(t, 543, data3, "could not get correct int")
 	require.Equal(t, true, data4, "could not get correct bool")
 	require.Equal(t, time.Hour, data5, "could not get correct duration")
@@ -146,7 +146,7 @@ BOOLEAN:
    -bool-with-default-value          Bool with default value example (default true)
    -bwdv, -bool-with-default-value2  Bool with default value example #2 (default true)
 `
-	assert.Equal(t, actual, expected)
+	assert.Equal(t, expected, actual)
 
 	tearDown(t.Name())
 }
@@ -234,7 +234,7 @@ func TestParseStringSlice(t *testing.T) {
 	err := flagSet.Parse()
 	assert.Nil(t, err)
 
-	assert.Equal(t, StringSlice{header1, header2, header3}, stringSlice)
+	assert.Equal(t, StringSlice{Value: []string{header1, header2, header3}}, stringSlice)
 	tearDown(t.Name())
 
 }
@@ -258,7 +258,7 @@ func TestParseCommaSeparatedStringSlice(t *testing.T) {
 	err := flagSet.Parse()
 	assert.Nil(t, err)
 
-	assert.Equal(t, csStringSlice, StringSlice{value1, value2, value3})
+	assert.Equal(t, csStringSlice, StringSlice{Value: []string{value1, value2, value3}})
 	tearDown(t.Name())
 }
 
@@ -288,7 +288,7 @@ value3`
 	err = flagSet.Parse()
 	assert.Nil(t, err)
 
-	assert.Equal(t, csStringSlice, StringSlice{value1, value2, value3})
+	assert.Equal(t, csStringSlice, StringSlice{Value: []string{value1, value2, value3}})
 	tearDown(t.Name())
 }
 
@@ -312,7 +312,39 @@ config-only:
 	err = flagSet.MergeConfigFile("test.yaml")
 	require.Nil(t, err, "could not merge temporary config")
 
-	require.Equal(t, StringSlice{"test", "test2"}, data, "could not get correct string slice")
+	require.Equal(t, StringSlice{Value: []string{"test", "test2"}}, data, "could not get correct string slice")
+	tearDown(t.Name())
+}
+
+func TestSetDefaultStringSliceValue(t *testing.T) {
+	var data StringSlice
+	flagSet := NewFlagSet()
+	flagSet.StringSliceVar(&data, "test", []string{"A,A,A"}, "Default value for a test flag example", CommaSeparatedStringSliceOptions)
+	err := flagSet.CommandLine.Parse([]string{"-test", "item1"})
+	require.Nil(t, err)
+	require.Equal(t, StringSlice{Value: []string{"item1"}}, data, "could not get correct string slice")
+
+	var data2 StringSlice
+	flagSet2 := NewFlagSet()
+	flagSet2.StringSliceVar(&data2, "test", []string{"A"}, "Default value for a test flag example", CommaSeparatedStringSliceOptions)
+	err = flagSet2.CommandLine.Parse([]string{"-test", "item1,item2"})
+	require.Nil(t, err)
+	require.Equal(t, StringSlice{Value: []string{"item1", "item2"}}, data2, "could not get correct string slice")
+
+	var data3 StringSlice
+	flagSet3 := NewFlagSet()
+	flagSet3.StringSliceVar(&data3, "test", []string{}, "Default value for a test flag example", CommaSeparatedStringSliceOptions)
+	err = flagSet3.CommandLine.Parse([]string{"-test", "item1,item2"})
+	require.Nil(t, err)
+	require.Equal(t, StringSlice{Value: []string{"item1", "item2"}}, data3, "could not get correct string slice")
+
+	var data4 StringSlice
+	flagSet4 := NewFlagSet()
+	flagSet4.StringSliceVar(&data4, "test", nil, "Default value for a test flag example", CommaSeparatedStringSliceOptions)
+	err = flagSet4.CommandLine.Parse([]string{"-test", "item1,\"item2\""})
+	require.Nil(t, err)
+	require.Equal(t, StringSlice{Value: []string{"item1", "item2"}}, data4, "could not get correct string slice")
+
 	tearDown(t.Name())
 }
 

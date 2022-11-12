@@ -154,8 +154,8 @@ func (flagSet *FlagSet) generateDefaultConfig() []byte {
 			configBuffer.WriteString(dv)
 		case flag.Value:
 			configBuffer.WriteString(dv.String())
-		case StringSlice:
-			configBuffer.WriteString(dv.String())
+		case []string:
+			configBuffer.WriteString(ToString(dv))
 		}
 
 		configBuffer.WriteString("\n\n")
@@ -342,7 +342,7 @@ func (flagSet *FlagSet) IntVar(field *int, long string, defaultValue int, usage 
 
 // StringSliceVarP adds a string slice flag with a shortname and longname
 // Use options to customize the behavior
-func (flagSet *FlagSet) StringSliceVarP(field *StringSlice, long, short string, defaultValue StringSlice, usage string, options Options) *FlagData {
+func (flagSet *FlagSet) StringSliceVarP(field *StringSlice, long, short string, defaultValue []string, usage string, options Options) *FlagData {
 	optionMap[field] = options
 	for _, defaultItem := range defaultValue {
 		values, _ := ToStringSlice(defaultItem, options)
@@ -350,6 +350,8 @@ func (flagSet *FlagSet) StringSliceVarP(field *StringSlice, long, short string, 
 			_ = field.Set(value)
 		}
 	}
+	field.Default = true
+
 	flagData := &FlagData{
 		usage:        usage,
 		long:         long,
@@ -377,6 +379,8 @@ func (flagSet *FlagSet) StringSliceVarConfigOnly(field *StringSlice, long string
 	for _, item := range defaultValue {
 		_ = field.Set(item)
 	}
+	field.Default = true
+
 	flagData := &FlagData{
 		usage:        usage,
 		long:         long,
@@ -426,6 +430,7 @@ func (flagSet *FlagSet) PortVarP(field *Port, long, short string, defaultValue [
 	for _, item := range defaultValue {
 		_ = field.Set(item)
 	}
+	field.Default = true
 
 	flagData := &FlagData{
 		usage:        usage,
@@ -673,6 +678,10 @@ func createUsageDefaultValue(data *FlagData, currentFlag *flag.Flag, valueType r
 	if !isZeroValue(currentFlag, currentFlag.DefValue) {
 		defaultValueTemplate := " (default "
 		switch valueType.String() { // ugly hack because "flag.stringValue" is not exported from the parent library
+		case "*goflags.StringSlice":
+			return defaultValueTemplate + ToString(data.defaultValue.([]string)) + ")"
+		case "goflags.StringSlice":
+			return defaultValueTemplate + ToString(data.defaultValue.([]string)) + ")"
 		case "*flag.stringValue":
 			defaultValueTemplate += "%q"
 		default:
@@ -685,21 +694,29 @@ func createUsageDefaultValue(data *FlagData, currentFlag *flag.Flag, valueType r
 }
 
 func createUsageTypeAndDescription(currentFlag *flag.Flag, valueType reflect.Type) string {
-	var result string
+	var (
+		result          string
+		usage           string
+		flagDisplayType string
+	)
+	flagDisplayType, usage = flag.UnquoteUsage(currentFlag)
 
-	flagDisplayType, usage := flag.UnquoteUsage(currentFlag)
 	if len(flagDisplayType) > 0 {
 		if flagDisplayType == "value" { // hardcoded in the goflags library
-			switch valueType.Kind() {
-			case reflect.Ptr:
-				pointerTypeElement := valueType.Elem()
-				switch pointerTypeElement.Kind() {
-				case reflect.Slice, reflect.Array:
-					switch pointerTypeElement.Elem().Kind() {
-					case reflect.String:
-						flagDisplayType = "string[]"
-					default:
-						flagDisplayType = "value[]"
+			if strings.Contains(valueType.String(), "StringSlice") {
+				flagDisplayType = "string[]"
+			} else {
+				switch valueType.Kind() {
+				case reflect.Ptr:
+					pointerTypeElement := valueType.Elem()
+					switch pointerTypeElement.Kind() {
+					case reflect.Slice, reflect.Array:
+						switch pointerTypeElement.Elem().Kind() {
+						case reflect.String:
+							flagDisplayType = "string[]"
+						default:
+							flagDisplayType = "value[]"
+						}
 					}
 				}
 			}

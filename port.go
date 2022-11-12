@@ -10,7 +10,8 @@ import (
 
 // Port is a list of unique ports in a normalized format
 type Port struct {
-	kv map[int]struct{}
+	kv      map[int]struct{}
+	Default bool
 }
 
 func (port Port) String() string {
@@ -28,6 +29,10 @@ func (port Port) String() string {
 
 // Set inserts a value to the port map. A number of formats are accepted.
 func (port *Port) Set(value string) error {
+	if port.Default {
+		port.kv = map[int]struct{}{}
+		port.Default = false
+	}
 	if port.kv == nil {
 		port.kv = make(map[int]struct{})
 	}

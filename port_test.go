@@ -1,6 +1,7 @@
 package goflags
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -59,4 +60,32 @@ func TestPortType(t *testing.T) {
 		_ = port.Set("TCP:443,UDP:53")
 		require.ElementsMatch(t, port.AsPorts(), []int{443, 53}, "could not get correct ports")
 	})
+}
+
+func TestSetDefaultPortValue(t *testing.T) {
+	var data Port
+	flagSet := NewFlagSet()
+	flagSet.PortVarP(&data, "port", "p", []string{"1,3"}, "Default value for a test flag example")
+	err := flagSet.CommandLine.Parse([]string{"-p", "11"})
+	require.Nil(t, err)
+	fmt.Println(data)
+	require.Equal(t, Port{kv: map[int]struct{}{11: {}}}, data, "could not get correct string slice")
+
+	var data2 Port
+	flagSet2 := NewFlagSet()
+	flagSet2.PortVarP(&data2, "port", "p", []string{"1,3"}, "Default value for a test flag example")
+	err = flagSet2.CommandLine.Parse([]string{"-p", "11,12"})
+	require.Nil(t, err)
+	fmt.Println(data2)
+	require.Equal(t, Port{kv: map[int]struct{}{11: {}, 12: {}}}, data2, "could not get correct string slice")
+
+	var data3 Port
+	flagSet3 := NewFlagSet()
+	flagSet3.PortVarP(&data3, "port", "p", nil, "Default value for a test flag example")
+	err = flagSet3.CommandLine.Parse([]string{"-p", "11,12"})
+	fmt.Println(data2)
+	require.Nil(t, err)
+	require.Equal(t, Port{kv: map[int]struct{}{11: {}, 12: {}}}, data3, "could not get correct string slice")
+
+	tearDown(t.Name())
 }
