@@ -91,7 +91,11 @@ func ToStringSlice(value string, options Options) ([]string, error) {
 			} else {
 				commaFound, part := searchPart(value[index:], ',')
 
-				if commaFound {
+				// ingore comma if it inside quotes eg. [uncover -q 'org:"Something, Inc."']
+				if commaFound && commaBetweenQuotes(value[index:]) {
+					part = value[index:]
+					index += len(part)
+				} else if commaFound {
 					index += len(part) + 1
 				} else {
 					index += len(part)
@@ -119,4 +123,22 @@ func normalize(s string) string {
 
 func normalizeLowercase(s string) string {
 	return strings.TrimSpace(strings.Trim(strings.TrimSpace(strings.ToLower(s)), string(quotes)))
+}
+
+func commaBetweenQuotes(value string) bool {
+	commaPos := strings.IndexRune(value, ',') // TODO debug the test
+	// check comma is inside quotes or not
+	if commaPos != -1 {
+		for _, quote := range quotes {
+
+			firstQuote := strings.IndexRune(value, quote)
+			if firstQuote != -1 {
+				lastQuote := strings.IndexRune(value[firstQuote+1:], quote)
+				if firstQuote < commaPos && commaPos < (lastQuote+firstQuote) {
+					return true
+				}
+			}
+		}
+	}
+	return false
 }
