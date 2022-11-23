@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -16,17 +15,18 @@ import (
 	"time"
 
 	"github.com/cnf/structhash"
-	"github.com/projectdiscovery/fileutil"
+	fileutil "github.com/projectdiscovery/utils/file"
 	"gopkg.in/yaml.v3"
 )
 
 // FlagSet is a list of flags for an application
 type FlagSet struct {
-	Marshal     bool
-	description string
-	flagKeys    InsertionOrderedMap
-	groups      []groupData
-	CommandLine *flag.FlagSet
+	Marshal        bool
+	description    string
+	flagKeys       InsertionOrderedMap
+	groups         []groupData
+	CommandLine    *flag.FlagSet
+	configFilePath string
 
 	// OtherOptionsGroupName is the name for all flags not in a group
 	OtherOptionsGroupName string
@@ -94,17 +94,18 @@ func (flagSet *FlagSet) MergeConfigFile(file string) error {
 
 // Parse parses the flags provided to the library.
 func (flagSet *FlagSet) Parse() error {
+	flagSet.CommandLine.SetOutput(os.Stdout)
 	flagSet.CommandLine.Usage = flagSet.usageFunc
 	_ = flagSet.CommandLine.Parse(os.Args[1:])
 
-	configFilePath, err := GetConfigFilePath()
+	configFilePath, err := flagSet.GetConfigFilePath()
 	if err != nil {
 		return err
 	}
 	_ = os.MkdirAll(filepath.Dir(configFilePath), os.ModePerm)
 	if !fileutil.FileExists(configFilePath) {
 		configData := flagSet.generateDefaultConfig()
-		return ioutil.WriteFile(configFilePath, configData, os.ModePerm)
+		return os.WriteFile(configFilePath, configData, os.ModePerm)
 	}
 	_ = flagSet.MergeConfigFile(configFilePath) // try to read default config after parsing flags
 	return nil
@@ -344,7 +345,6 @@ func (flagSet *FlagSet) IntVar(field *int, long string, defaultValue int, usage 
 func (flagSet *FlagSet) StringSliceVarP(field *StringSlice, long, short string, defaultValue StringSlice, usage string, options Options) *FlagData {
 	optionMap[field] = options
 	for _, defaultItem := range defaultValue {
-		_ = field.Set(defaultItem)
 		values, _ := ToStringSlice(defaultItem, options)
 		for _, value := range values {
 			_ = field.Set(value)
@@ -472,6 +472,33 @@ func (flagSet *FlagSet) DurationVar(field *time.Duration, long string, defaultVa
 	return flagData
 }
 
+// EnumVar adds a enum flag with a longname
+func (flagSet *FlagSet) EnumVar(field *string, long string, defaultValue EnumVariable, usage string, allowedTypes AllowdTypes) *FlagData {
+	return flagSet.EnumVarP(field, long, "", defaultValue, usage, allowedTypes)
+}
+
+// EnumVarP adds a enum flag with a shortname and longname
+func (flagSet *FlagSet) EnumVarP(field *string, long, short string, defaultValue EnumVariable, usage string, allowedTypes AllowdTypes) *FlagData {
+	for k, v := range allowedTypes {
+		if v == defaultValue {
+			*field = k
+		}
+	}
+	flagData := &FlagData{
+		usage:        usage,
+		long:         long,
+		defaultValue: defaultValue,
+	}
+	if short != "" {
+		flagData.short = short
+		flagSet.CommandLine.Var(&EnumVar{allowedTypes, field}, short, usage)
+		flagSet.flagKeys.Set(short, flagData)
+	}
+	flagSet.CommandLine.Var(&EnumVar{allowedTypes, field}, long, usage)
+	flagSet.flagKeys.Set(long, flagData)
+	return flagData
+}
+
 func (flagSet *FlagSet) usageFunc() {
 	var helpAsked bool
 
@@ -501,6 +528,11 @@ func (flagSet *FlagSet) usageFunc() {
 			flagSet.displayGroupUsageFunc(newUniqueDeduper(), group, cliOutput, writer)
 			return
 		}
+		flag := flagSet.getFlagByName(strings.ToLower(os.Args[2]))
+		if flag != nil {
+			flagSet.displaySingleFlagUsageFunc(os.Args[2], flag, cliOutput, writer)
+			return
+		}
 	}
 
 	if len(flagSet.groups) > 0 {
@@ -517,6 +549,17 @@ func (flagSet *FlagSet) getGroupbyName(name string) groupData {
 		}
 	}
 	return groupData{}
+}
+
+func (flagSet *FlagSet) getFlagByName(name string) *FlagData {
+	var flagData *FlagData
+	flagSet.flagKeys.forEach(func(key string, data *FlagData) {
+		if strings.EqualFold(data.long, name) || strings.EqualFold(data.short, name) {
+			flagData = data
+			return
+		}
+	})
+	return flagData
 }
 
 // usageFuncInternal prints usage for command line flags
@@ -583,6 +626,15 @@ func (flagSet *FlagSet) displayGroupUsageFunc(uniqueDeduper *uniqueDeduper, grou
 	writer.Flush()
 	fmt.Printf("\n")
 	return otherOptions
+}
+
+// displaySingleFlagUsageFunc displays usage for a single flag
+func (flagSet *FlagSet) displaySingleFlagUsageFunc(name string, data *FlagData, cliOutput io.Writer, writer *tabwriter.Writer) {
+	if currentFlag := flagSet.CommandLine.Lookup(name); currentFlag != nil {
+		result := createUsageString(data, currentFlag)
+		fmt.Fprint(writer, result, "\n")
+		writer.Flush()
+	}
 }
 
 type uniqueDeduper struct {

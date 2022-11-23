@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/projectdiscovery/fileutil"
+	fileutil "github.com/projectdiscovery/utils/file"
 )
 
 var quotes = []rune{'"', '\'', '`'}
@@ -111,6 +111,10 @@ func ToStringSlice(value string, options Options) ([]string, error) {
 
 func isEmpty(s string) bool {
 	return strings.TrimSpace(s) == ""
+}
+
+func isFromFile(_ string) bool {
+	return true
 }
 
 func normalizeTrailingParts(s string) string {

@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/projectdiscovery/stringsutil"
+	stringsutil "github.com/projectdiscovery/utils/strings"
 )
 
 // Port is a list of unique ports in a normalized format
