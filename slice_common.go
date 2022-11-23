@@ -60,7 +60,6 @@ func ToStringSlice(value string, options Options) ([]string, error) {
 	}
 
 	addPartToResult := func(part string) {
-
 		if !options.IsEmpty(part) {
 			if options.Normalize != nil {
 				part = options.Normalize(part)
@@ -97,7 +96,6 @@ func ToStringSlice(value string, options Options) ([]string, error) {
 
 				if commaFound {
 					index += len(part) + 1
-
 				} else {
 					index += len(part)
 				}
@@ -105,7 +103,6 @@ func ToStringSlice(value string, options Options) ([]string, error) {
 				addPartToResult(part)
 			}
 		}
-
 	}
 	return result, nil
 }
