@@ -1,7 +1,6 @@
 package goflags
 
 import (
-	"fmt"
 	"os"
 	"testing"
 
@@ -46,7 +45,6 @@ func TestNormalizedStringSlicePositive(t *testing.T) {
 
 	for value, expected := range slices {
 		result, err := ToStringSlice(value, NormalizedStringSliceOptions)
-		fmt.Println(result)
 		assert.Nil(t, err)
 		assert.Equal(t, result, expected)
 	}

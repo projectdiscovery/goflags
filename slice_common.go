@@ -49,6 +49,7 @@ type Options struct {
 	IsFromFile func(string) bool
 	IsEmpty    func(string) bool
 	Normalize  func(string) string
+	RawString  bool
 }
 
 // ToStringSlice converts a value to string slice based on options
@@ -59,6 +60,7 @@ func ToStringSlice(value string, options Options) ([]string, error) {
 	}
 
 	addPartToResult := func(part string) {
+
 		if !options.IsEmpty(part) {
 			if options.Normalize != nil {
 				part = options.Normalize(part)
@@ -74,6 +76,8 @@ func ToStringSlice(value string, options Options) ([]string, error) {
 		for line := range linesChan {
 			addPartToResult(line)
 		}
+	} else if options.RawString {
+		addPartToResult(value)
 	} else {
 		index := 0
 		for index < len(value) {
@@ -91,12 +95,9 @@ func ToStringSlice(value string, options Options) ([]string, error) {
 			} else {
 				commaFound, part := searchPart(value[index:], ',')
 
-				// ingore comma if it inside quotes eg. [uncover -q 'org:"Something, Inc."']
-				if commaFound && commaBetweenQuotes(value[index:]) {
-					part = value[index:]
-					index += len(part)
-				} else if commaFound {
+				if commaFound {
 					index += len(part) + 1
+
 				} else {
 					index += len(part)
 				}
@@ -104,8 +105,8 @@ func ToStringSlice(value string, options Options) ([]string, error) {
 				addPartToResult(part)
 			}
 		}
-	}
 
+	}
 	return result, nil
 }
 
@@ -127,22 +128,4 @@ func normalize(s string) string {
 
 func normalizeLowercase(s string) string {
 	return strings.TrimSpace(strings.Trim(strings.TrimSpace(strings.ToLower(s)), string(quotes)))
-}
-
-func commaBetweenQuotes(value string) bool {
-	commaPos := strings.IndexRune(value, ',') // TODO debug the test
-	// check comma is inside quotes or not
-	if commaPos != -1 {
-		for _, quote := range quotes {
-
-			firstQuote := strings.IndexRune(value, quote)
-			if firstQuote != -1 {
-				lastQuote := strings.IndexRune(value[firstQuote+1:], quote)
-				if firstQuote < commaPos && commaPos < (lastQuote+firstQuote) {
-					return true
-				}
-			}
-		}
-	}
-	return false
 }
