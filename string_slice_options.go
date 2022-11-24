@@ -58,6 +58,7 @@ var FileStringSliceOptions = Options{
 	IsEmpty:    isEmpty,
 	Normalize:  normalizeTrailingParts,
 	IsFromFile: isFromFile,
+	RawString:  true,
 }
 
 // NormalizedStringSliceOptions represents a list of items

@@ -1,7 +1,6 @@
 package goflags
 
 import (
-	"fmt"
 	"os"
 	"testing"
 
@@ -46,7 +45,6 @@ func TestNormalizedStringSlicePositive(t *testing.T) {
 
 	for value, expected := range slices {
 		result, err := ToStringSlice(value, NormalizedStringSliceOptions)
-		fmt.Println(result)
 		assert.Nil(t, err)
 		assert.Equal(t, result, expected)
 	}
@@ -96,6 +94,11 @@ func TestFileStringSliceOptions(t *testing.T) {
 	result, err := ToStringSlice(filename, FileStringSliceOptions)
 	assert.Nil(t, err)
 	assert.Equal(t, []string{"value1,value2", "value3"}, result, "could not get correct path")
+
+	// command line input value
+	result, err = ToStringSlice("string:\"contains, comma and quotes.\"", FileStringSliceOptions)
+	assert.Nil(t, err)
+	assert.Equal(t, []string{"string:\"contains, comma and quotes.\""}, result, "could not get correct path")
 }
 
 func TestFileNormalizedOriginalStringSliceOptions(t *testing.T) {

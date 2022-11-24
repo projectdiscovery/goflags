@@ -46,9 +46,14 @@ func ToString(slice []string) string {
 }
 
 type Options struct {
+	// IsFromFile determines if the values are from file
 	IsFromFile func(string) bool
-	IsEmpty    func(string) bool
-	Normalize  func(string) string
+	// IsEmpty determines if the values are empty
+	IsEmpty func(string) bool
+	// Normalize the value (eg. removing trailing spaces)
+	Normalize func(string) string
+	// RawString determines if the value should be considered as is
+	RawString bool
 }
 
 // ToStringSlice converts a value to string slice based on options
@@ -74,6 +79,8 @@ func ToStringSlice(value string, options Options) ([]string, error) {
 		for line := range linesChan {
 			addPartToResult(line)
 		}
+	} else if options.RawString {
+		addPartToResult(value)
 	} else {
 		index := 0
 		for index < len(value) {
@@ -101,7 +108,6 @@ func ToStringSlice(value string, options Options) ([]string, error) {
 			}
 		}
 	}
-
 	return result, nil
 }
 
