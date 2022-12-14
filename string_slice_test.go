@@ -7,11 +7,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNormalizedStringSlicePositive(t *testing.T) {
+func TestNormalizedStringSlice(t *testing.T) {
 	expectedABC := []string{"aa", "bb", "cc"}
 	expectedFilePath := []string{"/root/home/file0"}
 
-	slices := map[string][]string{
+	validTests := map[string][]string{
 		"aa,bb,cc":                 expectedABC,
 		"  aa, bb,  cc   ":         expectedABC,
 		"  `aa`, 'bb',  \"cc\"   ": expectedABC,
@@ -43,15 +43,13 @@ func TestNormalizedStringSlicePositive(t *testing.T) {
 		"\"c:\\my files\\bug,bounty\",c:\\my_files\\bug bounty": {"c:\\my files\\bug,bounty", "c:\\my_files\\bug bounty"},
 	}
 
-	for value, expected := range slices {
+	for value, expected := range validTests {
 		result, err := ToStringSlice(value, NormalizedStringSliceOptions)
 		assert.Nil(t, err)
 		assert.Equal(t, result, expected)
 	}
-}
 
-func TestNormalizedStringSliceNegative(t *testing.T) {
-	slices := []string{
+	invalidTests := []string{
 		"\"/root/home/file0",
 		"'/root/home/file0",
 		"`/root/home/file0",
@@ -59,7 +57,7 @@ func TestNormalizedStringSliceNegative(t *testing.T) {
 		"\"/root/home/file0`",
 	}
 
-	for _, value := range slices {
+	for _, value := range invalidTests {
 		result, err := ToStringSlice(value, NormalizedStringSliceOptions)
 		assert.Nil(t, result)
 		assert.NotNil(t, err)

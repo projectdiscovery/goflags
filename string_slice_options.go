@@ -58,7 +58,7 @@ var FileStringSliceOptions = Options{
 	IsEmpty:    isEmpty,
 	Normalize:  normalizeTrailingParts,
 	IsFromFile: isFromFile,
-	RawString:  true,
+	IsRaw:      func(s string) bool { return true },
 }
 
 // NormalizedStringSliceOptions represents a list of items
