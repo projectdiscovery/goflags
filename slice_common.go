@@ -52,8 +52,8 @@ type Options struct {
 	IsEmpty func(string) bool
 	// Normalize the value (eg. removing trailing spaces)
 	Normalize func(string) string
-	// RawString determines if the value should be considered as is
-	RawString bool
+	// IsRaw determines if the value should be considered as a raw string
+	IsRaw func(string) bool
 }
 
 // ToStringSlice converts a value to string slice based on options
@@ -79,7 +79,7 @@ func ToStringSlice(value string, options Options) ([]string, error) {
 		for line := range linesChan {
 			addPartToResult(line)
 		}
-	} else if options.RawString {
+	} else if options.IsRaw != nil && options.IsRaw(value) {
 		addPartToResult(value)
 	} else {
 		index := 0

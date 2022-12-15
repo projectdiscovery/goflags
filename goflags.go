@@ -16,6 +16,7 @@ import (
 
 	"github.com/cnf/structhash"
 	fileutil "github.com/projectdiscovery/utils/file"
+	"golang.org/x/exp/maps"
 	"gopkg.in/yaml.v3"
 )
 
@@ -350,6 +351,7 @@ func (flagSet *FlagSet) StringSliceVarP(field *StringSlice, long, short string, 
 			_ = field.Set(value)
 		}
 	}
+	optionDefaultValues[field] = *field
 	flagData := &FlagData{
 		usage:        usage,
 		long:         long,
@@ -426,6 +428,7 @@ func (flagSet *FlagSet) PortVarP(field *Port, long, short string, defaultValue [
 	for _, item := range defaultValue {
 		_ = field.Set(item)
 	}
+	portOptionDefaultValues[field] = maps.Clone(field.kv)
 
 	flagData := &FlagData{
 		usage:        usage,

@@ -146,7 +146,7 @@ BOOLEAN:
    -bool-with-default-value          Bool with default value example (default true)
    -bwdv, -bool-with-default-value2  Bool with default value example #2 (default true)
 `
-	assert.Equal(t, actual, expected)
+	assert.Equal(t, expected, actual)
 
 	tearDown(t.Name())
 }
@@ -316,7 +316,39 @@ config-only:
 	tearDown(t.Name())
 }
 
-func tearDown(uniqueValue string) { // sadly there is no official support for setup/teardown/test
+func TestSetDefaultStringSliceValue(t *testing.T) {
+	var data StringSlice
+	flagSet := NewFlagSet()
+	flagSet.StringSliceVar(&data, "test", []string{"A,A,A"}, "Default value for a test flag example", CommaSeparatedStringSliceOptions)
+	err := flagSet.CommandLine.Parse([]string{"-test", "item1"})
+	require.Nil(t, err)
+	require.Equal(t, StringSlice{"item1"}, data, "could not get correct string slice")
+
+	var data2 StringSlice
+	flagSet2 := NewFlagSet()
+	flagSet2.StringSliceVar(&data2, "test", []string{"A"}, "Default value for a test flag example", CommaSeparatedStringSliceOptions)
+	err = flagSet2.CommandLine.Parse([]string{"-test", "item1,item2"})
+	require.Nil(t, err)
+	require.Equal(t, StringSlice{"item1", "item2"}, data2, "could not get correct string slice")
+
+	var data3 StringSlice
+	flagSet3 := NewFlagSet()
+	flagSet3.StringSliceVar(&data3, "test", []string{}, "Default value for a test flag example", CommaSeparatedStringSliceOptions)
+	err = flagSet3.CommandLine.Parse([]string{"-test", "item1,item2"})
+	require.Nil(t, err)
+	require.Equal(t, StringSlice{"item1", "item2"}, data3, "could not get correct string slice")
+
+	var data4 StringSlice
+	flagSet4 := NewFlagSet()
+	flagSet4.StringSliceVar(&data4, "test", nil, "Default value for a test flag example", CommaSeparatedStringSliceOptions)
+	err = flagSet4.CommandLine.Parse([]string{"-test", "item1,\"item2\""})
+	require.Nil(t, err)
+	require.Equal(t, StringSlice{"item1", "item2"}, data4, "could not get correct string slice")
+
+	tearDown(t.Name())
+}
+
+func tearDown(uniqueValue string) {
 	flag.CommandLine = flag.NewFlagSet(uniqueValue, flag.ContinueOnError)
 	flag.CommandLine.Usage = flag.Usage
 }
