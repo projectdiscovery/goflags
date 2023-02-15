@@ -490,7 +490,7 @@ func (flagSet *FlagSet) EnumVarP(field *string, long, short string, defaultValue
 	flagData := &FlagData{
 		usage:        usage,
 		long:         long,
-		defaultValue: defaultValue,
+		defaultValue: *field,
 	}
 	if short != "" {
 		flagData.short = short
