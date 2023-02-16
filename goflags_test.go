@@ -113,11 +113,6 @@ func TestUsageOrder(t *testing.T) {
 	flagSet.BoolVarP(&boolData, "bool-with-default-value2", "bwdv", true, "Bool with default value example #2").Group("Bool")
 
 	flagSet.SetGroup("Enum", "Enum")
-	flagSet.EnumVar(&enumData, "enum", EnumVariable(-1), "Enum value(zero/one/two) example", AllowdTypes{
-		"zero": EnumVariable(0),
-		"one":  EnumVariable(1),
-		"two":  EnumVariable(2),
-	}).Group("Enum")
 	flagSet.EnumVarP(&enumData, "enum-with-default-value", "en", EnumVariable(0), "Enum with default value(zero/one/two)", AllowdTypes{
 		"zero": EnumVariable(0),
 		"one":  EnumVariable(1),
@@ -159,7 +154,6 @@ BOOLEAN:
    -bool-with-default-value          Bool with default value example (default true)
    -bwdv, -bool-with-default-value2  Bool with default value example #2 (default true)
 ENUM:
-   -enum value                          Enum value(zero/one/two) example
    -en, -enum-with-default-value value  Enum with default value(zero/one/two) (default zero)
 `
 	assert.Equal(t, expected, actual)

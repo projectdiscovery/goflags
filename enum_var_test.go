@@ -18,7 +18,7 @@ const (
 
 func TestEnumVarPositive(t *testing.T) {
 	flagSet := NewFlagSet()
-	flagSet.EnumVar(&enumString, "enum", Nil, "enum", AllowdTypes{"type1": Type1, "type2": Type2})
+	flagSet.EnumVar(&enumString, "enum", Type1, "enum", AllowdTypes{"type1": Type1, "type2": Type2})
 	os.Args = []string{
 		os.Args[0],
 		"--enum", "type1",
