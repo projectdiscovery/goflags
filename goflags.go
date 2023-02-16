@@ -482,15 +482,20 @@ func (flagSet *FlagSet) EnumVar(field *string, long string, defaultValue EnumVar
 
 // EnumVarP adds a enum flag with a shortname and longname
 func (flagSet *FlagSet) EnumVarP(field *string, long, short string, defaultValue EnumVariable, usage string, allowedTypes AllowdTypes) *FlagData {
+	var hasDefaultValue bool
 	for k, v := range allowedTypes {
 		if v == defaultValue {
+			hasDefaultValue = true
 			*field = k
 		}
+	}
+	if !hasDefaultValue {
+		panic("undefined default value")
 	}
 	flagData := &FlagData{
 		usage:        usage,
 		long:         long,
-		defaultValue: defaultValue,
+		defaultValue: *field,
 	}
 	if short != "" {
 		flagData.short = short

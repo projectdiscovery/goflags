@@ -86,6 +86,7 @@ func TestUsageOrder(t *testing.T) {
 	var stringSliceData2 StringSlice
 	var intData int
 	var boolData bool
+	var enumData string
 
 	flagSet.SetGroup("String", "String")
 	flagSet.StringVar(&stringData, "string-value", "", "String example value example").Group("String")
@@ -110,6 +111,13 @@ func TestUsageOrder(t *testing.T) {
 	flagSet.BoolVarP(&boolData, "bool-value2", "bv", false, "Bool value example #2").Group("Bool")
 	flagSet.BoolVar(&boolData, "bool-with-default-value", true, "Bool with default value example").Group("Bool")
 	flagSet.BoolVarP(&boolData, "bool-with-default-value2", "bwdv", true, "Bool with default value example #2").Group("Bool")
+
+	flagSet.SetGroup("Enum", "Enum")
+	flagSet.EnumVarP(&enumData, "enum-with-default-value", "en", EnumVariable(0), "Enum with default value(zero/one/two)", AllowdTypes{
+		"zero": EnumVariable(0),
+		"one":  EnumVariable(1),
+		"two":  EnumVariable(2),
+	}).Group("Enum")
 
 	output := &bytes.Buffer{}
 	flagSet.CommandLine.SetOutput(output)
@@ -145,6 +153,8 @@ BOOLEAN:
    -bv, -bool-value2                 Bool value example #2
    -bool-with-default-value          Bool with default value example (default true)
    -bwdv, -bool-with-default-value2  Bool with default value example #2 (default true)
+ENUM:
+   -en, -enum-with-default-value value  Enum with default value(zero/one/two) (default zero)
 `
 	assert.Equal(t, expected, actual)
 
