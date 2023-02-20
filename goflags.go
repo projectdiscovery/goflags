@@ -28,7 +28,7 @@ type FlagSet struct {
 	groups         []groupData
 	CommandLine    *flag.FlagSet
 	configFilePath string
-
+	updateGroup    *UpdateGroup
 	// OtherOptionsGroupName is the name for all flags not in a group
 	OtherOptionsGroupName string
 	configOnlyKeys        InsertionOrderedMap
@@ -62,6 +62,7 @@ func NewFlagSet() *FlagSet {
 		OtherOptionsGroupName: "other options",
 		CommandLine:           flag.NewFlagSet(os.Args[0], flag.ExitOnError),
 		configOnlyKeys:        newInsertionOrderedMap(),
+		updateGroup:           &UpdateGroup{},
 	}
 }
 
@@ -109,7 +110,18 @@ func (flagSet *FlagSet) Parse() error {
 		return os.WriteFile(configFilePath, configData, os.ModePerm)
 	}
 	_ = flagSet.MergeConfigFile(configFilePath) // try to read default config after parsing flags
+	flagSet.parseUpdateGroup()
 	return nil
+}
+
+func (flagSet *FlagSet) parseUpdateGroup() {
+	if !reflect.DeepEqual(flagSet.updateGroup, &UpdateGroup{}) && !flagSet.updateGroup.Options.DisableUpdate {
+		if flagSet.updateGroup.Options.IsUpdate {
+			flagSet.updateGroup.Actions.UpdateCallback()
+		} else {
+			flagSet.updateGroup.Actions.UpdateCheckCallback()
+		}
+	}
 }
 
 // generateDefaultConfig generates a default YAML config file for a flagset.
