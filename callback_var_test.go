@@ -7,28 +7,30 @@ import (
 	"os"
 	"os/exec"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
-// func TestCallbackVarPositive(t *testing.T) {
-// 	toolName := "tool_1"
-// 	want := `updated successfully!`
-// 	got := &bytes.Buffer{}
+func TestCallbackVarPositive(t *testing.T) {
+	toolName := "tool_1"
+	want := `updated successfully!`
+	got := &bytes.Buffer{}
 
-// 	flagSet := NewFlagSet()
-// 	var update, disableUpdate bool
-// 	flagSet.CreateGroup("Update", "Update",
-// 		flagSet.CallbackVar(&update, "update", updateCallbackFunc(toolName, got), fmt.Sprintf("update %v to the latest released version", toolName)),
-// 		flagSet.CallbackVarP(&disableUpdate, "disable-update-check", "duc", func() {}, "disable automatic update check"),
-// 	)
-// 	os.Args = []string{
-// 		os.Args[0],
-// 		"-update",
-// 	}
-// 	err := flagSet.Parse()
-// 	assert.Nil(t, err)
-// 	assert.Equal(t, want, got.String())
-// 	tearDown(t.Name())
-// }
+	flagSet := NewFlagSet()
+	var update, disableUpdate bool
+	flagSet.CreateGroup("Update", "Update",
+		flagSet.CallbackVar(&update, "update", updateCallbackFunc(toolName, got), fmt.Sprintf("update %v to the latest released version", toolName)),
+		flagSet.CallbackVarP(&disableUpdate, "disable-update-check", "duc", func() {}, "disable automatic update check"),
+	)
+	os.Args = []string{
+		os.Args[0],
+		"-update",
+	}
+	err := flagSet.Parse()
+	assert.Nil(t, err)
+	assert.Equal(t, want, got.String())
+	tearDown(t.Name())
+}
 
 func TestCallbackVarNegative(t *testing.T) {
 	toolName := "tool_1"

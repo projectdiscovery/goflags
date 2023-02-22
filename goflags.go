@@ -97,6 +97,7 @@ func (flagSet *FlagSet) Parse() error {
 	flagSet.CommandLine.SetOutput(os.Stdout)
 	flagSet.CommandLine.Usage = flagSet.usageFunc
 	_ = flagSet.CommandLine.Parse(os.Args[1:])
+	flagSet.parseCallbackVars()
 
 	configFilePath, err := flagSet.GetConfigFilePath()
 	if err != nil {
@@ -108,7 +109,6 @@ func (flagSet *FlagSet) Parse() error {
 		return os.WriteFile(configFilePath, configData, os.ModePerm)
 	}
 	_ = flagSet.MergeConfigFile(configFilePath) // try to read default config after parsing flags
-	flagSet.parseCallbackVars()
 	return nil
 }
 
