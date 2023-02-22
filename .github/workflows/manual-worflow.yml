@@ -1,6 +1,9 @@
 name: Manual Workflow
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - "debug-issue-103"
 
 
 jobs:  
