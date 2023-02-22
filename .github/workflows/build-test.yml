@@ -20,8 +20,5 @@ jobs:
       - name: Test
         run: go test ./...
 
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
-
       - name: Build
         run: go build .
