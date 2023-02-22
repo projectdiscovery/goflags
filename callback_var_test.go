@@ -36,7 +36,7 @@ func TestCallbackVarNegative(t *testing.T) {
 	toolName := "tool_1"
 	got := &bytes.Buffer{}
 
-	if os.Getenv("IS_SUB_PROCESS") == "1" {
+	if os.Getenv("IS_SUB_PROCESS") == "2" {
 		flagSet := NewFlagSet()
 		flagSet.CommandLine.SetOutput(got)
 		var update bool
@@ -50,7 +50,7 @@ func TestCallbackVarNegative(t *testing.T) {
 		_ = flagSet.Parse()
 	}
 	cmd := exec.Command(os.Args[0], "-test.run=TestCallbackVarNegative")
-	cmd.Env = append(os.Environ(), "IS_SUB_PROCESS=1")
+	cmd.Env = append(os.Environ(), "IS_SUB_PROCESS=2")
 	err := cmd.Run()
 	if e, ok := err.(*exec.ExitError); ok && !e.Success() {
 		return
