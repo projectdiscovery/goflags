@@ -19,11 +19,11 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v3
 
-      - name: Test
-        run: go test ./...
-
       - name: Setup tmate session
         uses: mxschmitt/action-tmate@v3
+        
+      - name: Test
+        run: go test ./...
 
       - name: Build
         run: go build .
