@@ -119,11 +119,9 @@ func TestUsageOrder(t *testing.T) {
 		"two":  EnumVariable(2),
 	}).Group("Enum")
 
-	// flagSet.SetGroup("Update", "Update")
-	// update := false
-	// duc := false
-	// flagSet.CallbackVar(&update, "update", func() {}, "update tool_1 to the latest released version").Group("Update")
-	// flagSet.CallbackVarP(&duc, "disable-update-check", "duc", func() {}, "disable automatic update check").Group("Update")
+	flagSet.SetGroup("Update", "Update")
+	flagSet.CallbackVar(func() {}, "update", "update tool_1 to the latest released version").Group("Update")
+	flagSet.CallbackVarP(func() {}, "disable-update-check", "duc", "disable automatic update check").Group("Update")
 
 	output := &bytes.Buffer{}
 	flagSet.CommandLine.SetOutput(output)
