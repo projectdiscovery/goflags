@@ -1,62 +1,56 @@
 package goflags
 
 import (
-	"errors"
+	"fmt"
 	"strconv"
 )
 
-var errParse = errors.New("parse error")
+// CallBackFunc
+type CallBackFunc func()
 
-type (
-	CallbackFunc func()
-
-	CallbackVar struct {
-		option  *bool
-		visited bool
-		action  CallbackFunc
-	}
-)
-
-func newCallbackVar(option *bool, action CallbackFunc) *CallbackVar {
-	return &CallbackVar{option: option, action: action}
+// callBackVar
+type callBackVar struct {
+	Value CallBackFunc
 }
 
-func (c *CallbackVar) Set(s string) error {
+// Set
+func (c *callBackVar) Set(s string) error {
 	v, err := strconv.ParseBool(s)
 	if err != nil {
-		err = errParse
+		return fmt.Errorf("failed to parse callback flag")
 	}
-	c.option = &v
-	return err
+	if v {
+		// if flag found execute callback
+		c.Value()
+	}
+	return nil
 }
 
-func (c *CallbackVar) IsBoolFlag() bool {
+// IsBoolFlag
+func (c *callBackVar) IsBoolFlag() bool {
 	return true
 }
 
-func (c *CallbackVar) String() string {
-	if c.option != nil {
-		return strconv.FormatBool(bool(*c.option))
-	}
+// String
+func (c *callBackVar) String() string {
 	return "false"
 }
 
 // CallbackVar adds a Callback flag with a longname
-func (flagSet *FlagSet) CallbackVar(field *bool, long string, defaultValue CallbackFunc, usage string) *FlagData {
-	return flagSet.CallbackVarP(field, long, "", defaultValue, usage)
+func (flagSet *FlagSet) CallbackVar(callback CallBackFunc, long string, usage string) *FlagData {
+	return flagSet.CallbackVarP(callback, long, "", usage)
 }
 
 // CallbackVarP adds a Callback flag with a shortname and longname
-func (flagSet *FlagSet) CallbackVarP(field *bool, long, short string, defaultValue CallbackFunc, usage string) *FlagData {
-	if defaultValue == nil {
-		return &FlagData{}
+func (flagSet *FlagSet) CallbackVarP(callback CallBackFunc, long, short string, usage string) *FlagData {
+	if callback == nil {
+		panic(fmt.Errorf("callback cannot be nil for flag -%v", long))
 	}
-
 	flagData := &FlagData{
 		usage:        usage,
 		long:         long,
-		defaultValue: strconv.FormatBool(*field),
-		field:        newCallbackVar(field, defaultValue),
+		defaultValue: strconv.FormatBool(false),
+		field:        &callBackVar{Value: callback},
 	}
 	if short != "" {
 		flagData.short = short
