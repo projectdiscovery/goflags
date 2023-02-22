@@ -17,10 +17,9 @@ func TestCallbackVarPositive(t *testing.T) {
 	got := &bytes.Buffer{}
 
 	flagSet := NewFlagSet()
-	var update, disableUpdate bool
 	flagSet.CreateGroup("Update", "Update",
-		flagSet.CallbackVar(&update, "update", updateCallbackFunc(toolName, got), fmt.Sprintf("update %v to the latest released version", toolName)),
-		flagSet.CallbackVarP(&disableUpdate, "disable-update-check", "duc", func() {}, "disable automatic update check"),
+		flagSet.CallbackVar(updateCallbackFunc(toolName, got), "update", fmt.Sprintf("update %v to the latest released version", toolName)),
+		flagSet.CallbackVarP(func() {}, "disable-update-check", "duc", "disable automatic update check"),
 	)
 	os.Args = []string{
 		os.Args[0],
@@ -39,9 +38,8 @@ func TestCallbackVarNegative(t *testing.T) {
 	if os.Getenv("IS_SUB_PROCESS") == "2" {
 		flagSet := NewFlagSet()
 		flagSet.CommandLine.SetOutput(got)
-		var update bool
 		flagSet.CreateGroup("Update", "Update",
-			flagSet.CallbackVar(&update, "update", nil, fmt.Sprintf("update %v to the latest released version", toolName)),
+			flagSet.CallbackVar(nil, "update", fmt.Sprintf("update %v to the latest released version", toolName)),
 		)
 		os.Args = []string{
 			os.Args[0],

@@ -28,6 +28,7 @@ type FlagSet struct {
 	groups         []groupData
 	CommandLine    *flag.FlagSet
 	configFilePath string
+
 	// OtherOptionsGroupName is the name for all flags not in a group
 	OtherOptionsGroupName string
 	configOnlyKeys        InsertionOrderedMap
@@ -110,15 +111,6 @@ func (flagSet *FlagSet) Parse() error {
 	}
 	_ = flagSet.MergeConfigFile(configFilePath) // try to read default config after parsing flags
 	return nil
-}
-
-func (flagSet *FlagSet) parseCallbackVars() {
-	flagSet.CommandLine.VisitAll(func(f *flag.Flag) {
-		if cbv, ok := f.Value.(*CallbackVar); ok && *cbv.option && !cbv.visited {
-			cbv.visited = true
-			cbv.action()
-		}
-	})
 }
 
 // generateDefaultConfig generates a default YAML config file for a flagset.
