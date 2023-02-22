@@ -1,11 +1,11 @@
-name: manual-workflow
+name: Manual Workflow
 on:
   workflow_dispatch:
 
 
 jobs:  
   build:
-    name: Test Builds
+    name: Manual Workflow
     runs-on: ubuntu-latest
     steps:
       - name: Set up Go
