@@ -119,6 +119,10 @@ func TestUsageOrder(t *testing.T) {
 		"two":  EnumVariable(2),
 	}).Group("Enum")
 
+	flagSet.SetGroup("Update", "Update")
+	flagSet.CallbackVar(func() {}, "update", "update tool_1 to the latest released version").Group("Update")
+	flagSet.CallbackVarP(func() {}, "disable-update-check", "duc", "disable automatic update check").Group("Update")
+
 	output := &bytes.Buffer{}
 	flagSet.CommandLine.SetOutput(output)
 
@@ -155,6 +159,9 @@ BOOLEAN:
    -bwdv, -bool-with-default-value2  Bool with default value example #2 (default true)
 ENUM:
    -en, -enum-with-default-value value  Enum with default value(zero/one/two) (default zero)
+UPDATE:
+   -update                      update tool_1 to the latest released version
+   -duc, -disable-update-check  disable automatic update check
 `
 	assert.Equal(t, expected, actual)
 
