@@ -14,7 +14,7 @@ require (
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/miekg/dns v1.1.50 // indirect
 	golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4 // indirect
-	golang.org/x/sys v0.1.0 // indirect
+	golang.org/x/sys v0.5.0 // indirect
 	golang.org/x/tools v0.1.12 // indirect
 )
 
@@ -27,5 +27,5 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/projectdiscovery/utils v0.0.4-0.20221214110533-9f95ee986a54
 	github.com/saintfish/chardet v0.0.0-20120816061221-3af4cd4741ca // indirect
-	golang.org/x/net v0.1.0 // indirect
+	golang.org/x/net v0.7.0 // indirect
 )
