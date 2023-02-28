@@ -51,6 +51,7 @@ func (flagSet *FlagSet) CallbackVarP(callback CallBackFunc, long, short string, 
 		long:         long,
 		defaultValue: strconv.FormatBool(false),
 		field:        &callBackVar{Value: callback},
+		skipMarshal: true,
 	}
 	if short != "" {
 		flagData.short = short

@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestCallbackVarPositive(t *testing.T) {
+func TestSuccessfulCallback(t *testing.T) {
 	toolName := "tool_1"
 	want := `updated successfully!`
 	got := &bytes.Buffer{}
@@ -31,7 +31,7 @@ func TestCallbackVarPositive(t *testing.T) {
 	tearDown(t.Name())
 }
 
-func TestCallbackVarNegative(t *testing.T) {
+func TestFailCallback(t *testing.T) {
 	toolName := "tool_1"
 	got := &bytes.Buffer{}
 
@@ -47,7 +47,7 @@ func TestCallbackVarNegative(t *testing.T) {
 		}
 		_ = flagSet.Parse()
 	}
-	cmd := exec.Command(os.Args[0], "-test.run=TestCallbackVarNegative")
+	cmd := exec.Command(os.Args[0], "-test.run=TestFailCallback")
 	cmd.Env = append(os.Environ(), "IS_SUB_PROCESS=1")
 	err := cmd.Run()
 	if e, ok := err.(*exec.ExitError); ok && !e.Success() {
