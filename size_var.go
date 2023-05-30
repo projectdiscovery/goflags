@@ -1,44 +1,16 @@
 package goflags
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
-	"strings"
+
+	fileutil "github.com/projectdiscovery/utils/file"
 )
 
 type Size int
 
-func (s *Size) Set(value string) error {
-	convertToBytes := func(maxFileSize string) (int, error) {
-		maxFileSize = strings.ToLower(maxFileSize)
-		// default to mb
-		if size, err := strconv.Atoi(maxFileSize); err == nil {
-			return size * 1024 * 1024, nil
-		}
-		if len(maxFileSize) < 3 {
-			return 0, errors.New("invalid max-size value")
-		}
-		sizeUnit := maxFileSize[len(maxFileSize)-2:]
-		size, err := strconv.Atoi(maxFileSize[:len(maxFileSize)-2])
-		if err != nil {
-			return 0, errors.New("parse error: " + err.Error())
-		}
-		if size < 0 {
-			return 0, errors.New("max-size cannot be negative")
-		}
-		if strings.EqualFold(sizeUnit, "kb") {
-			return size * 1024, nil
-		} else if strings.EqualFold(sizeUnit, "mb") {
-			return size * 1024 * 1024, nil
-		} else if strings.EqualFold(sizeUnit, "gb") {
-			return size * 1024 * 1024 * 1024, nil
-		} else if strings.EqualFold(sizeUnit, "tb") {
-			return size * 1024 * 1024 * 1024 * 1024, nil
-		}
-		return 0, errors.New("unsupported max-size unit")
-	}
-	sizeInBytes, err := convertToBytes(value)
+func (s *Size) Set(size string) error {
+	sizeInBytes, err := fileutil.FileSizeToByteLen(size)
 	if err != nil {
 		return err
 	}
