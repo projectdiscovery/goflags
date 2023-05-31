@@ -16,11 +16,11 @@ func (flagSet *FlagSet) GetConfigFilePath() (string, error) {
 	appName := filepath.Base(os.Args[0])
 	// trim extension from app name
 	appName = strings.TrimSuffix(appName, filepath.Ext(appName))
-	homePath, err := os.UserHomeDir()
+	userCfgDir, err := os.UserConfigDir()
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(homePath, ".config", appName, "config.yaml"), nil
+	return filepath.Join(userCfgDir, appName, "config.yaml"), nil
 }
 
 // SetConfigFilePath sets custom config file path
@@ -34,10 +34,10 @@ func GetConfigFilePath() (string, error) {
 	appName := filepath.Base(os.Args[0])
 	// trim extension from app name
 	appName = strings.TrimSuffix(appName, filepath.Ext(appName))
-	homePath, err := os.UserHomeDir()
+	userCfgDir, err := os.UserConfigDir()
 	if err != nil {
 		return "", err
 	}
 
-	return filepath.Join(homePath, ".config", appName, "config.yaml"), nil
+	return filepath.Join(userCfgDir, appName, "config.yaml"), nil
 }
