@@ -46,6 +46,8 @@ The following types are supported by the goflags library. The `<name>P` suffix m
 | EnumVarP                 | Enum value with long short name                                     |
 | CallbackVar			   | Callback function as value with long name							 |
 | CallbackVarP			   | Callback function as value with long short name					 |
+| SizeVar                  | String value with long name                                         |
+| SizeVarP                 | String value with long short name                                   |
 
 
 ### String Slice Options
