@@ -4,6 +4,9 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	fileutil "github.com/projectdiscovery/utils/file"
+	folderutil "github.com/projectdiscovery/utils/folder"
 )
 
 // GetConfigFilePath returns the config file path
@@ -12,15 +15,13 @@ func (flagSet *FlagSet) GetConfigFilePath() (string, error) {
 	if flagSet.configFilePath != "" {
 		return flagSet.configFilePath, nil
 	}
-	// generate default config name
-	appName := filepath.Base(os.Args[0])
-	// trim extension from app name
-	appName = strings.TrimSuffix(appName, filepath.Ext(appName))
-	userCfgDir, err := os.UserConfigDir()
+
+	err := migrateConfigFiles()
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(userCfgDir, appName, "config.yaml"), nil
+
+	return buildConfigFilePath(), nil
 }
 
 // SetConfigFilePath sets custom config file path
@@ -31,13 +32,39 @@ func (flagSet *FlagSet) SetConfigFilePath(filePath string) {
 // Deprecated: Use FlagSet.GetConfigFilePath instead.
 // GetConfigFilePath returns the default config file path
 func GetConfigFilePath() (string, error) {
-	appName := filepath.Base(os.Args[0])
-	// trim extension from app name
-	appName = strings.TrimSuffix(appName, filepath.Ext(appName))
-	userCfgDir, err := os.UserConfigDir()
+	err := migrateConfigFiles()
 	if err != nil {
 		return "", err
 	}
 
-	return filepath.Join(userCfgDir, appName, "config.yaml"), nil
+	return buildConfigFilePath(), nil
+}
+
+func buildConfigFilePath() string {
+	appConfigDir := buildAppConfigDirPath()
+	return filepath.Join(appConfigDir, "config.yaml")
+}
+
+func buildAppConfigDirPath() string {
+	appName := buildAppName()
+	return folderutil.AppConfigDirOrDefault(".", appName)
+}
+
+func buildAppName() string {
+	appName := filepath.Base(os.Args[0])
+	return strings.TrimSuffix(appName, filepath.Ext(appName))
+}
+
+// Note: This is a temporary function to migrate config files from old os-specific config path to os-agnostic config path
+func migrateConfigFiles() error {
+	appName := buildAppName()
+	homePath, _ := os.UserHomeDir()
+	sourceDir := filepath.Join(homePath, ".config", appName)
+	destinationDir := buildAppConfigDirPath()
+
+	ok := fileutil.FolderExists(sourceDir)
+	if !ok {
+		return nil
+	}
+	return folderutil.MigrateDir(sourceDir, destinationDir)
 }
