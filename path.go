@@ -15,12 +15,6 @@ func (flagSet *FlagSet) GetConfigFilePath() (string, error) {
 	if flagSet.configFilePath != "" {
 		return flagSet.configFilePath, nil
 	}
-
-	err := migrateConfigFiles()
-	if err != nil {
-		return "", err
-	}
-
 	return buildConfigFilePath(), nil
 }
 
@@ -32,12 +26,23 @@ func (flagSet *FlagSet) SetConfigFilePath(filePath string) {
 // Deprecated: Use FlagSet.GetConfigFilePath instead.
 // GetConfigFilePath returns the default config file path
 func GetConfigFilePath() (string, error) {
-	err := migrateConfigFiles()
-	if err != nil {
-		return "", err
-	}
-
 	return buildConfigFilePath(), nil
+}
+
+// Note: This is a temporary function to migrate config files from old os-specific config path to os-agnostic config path
+func MigrateConfigFiles(sourceDir string) error {
+	if sourceDir == "" {
+		appName := buildAppName()
+		homePath, _ := os.UserHomeDir()
+		sourceDir = filepath.Join(homePath, ".config", appName)
+	}
+	destinationDir := buildAppConfigDirPath()
+
+	ok := fileutil.FolderExists(sourceDir)
+	if !ok {
+		return nil
+	}
+	return folderutil.MigrateDir(sourceDir, destinationDir)
 }
 
 func buildConfigFilePath() string {
@@ -53,18 +58,4 @@ func buildAppConfigDirPath() string {
 func buildAppName() string {
 	appName := filepath.Base(os.Args[0])
 	return strings.TrimSuffix(appName, filepath.Ext(appName))
-}
-
-// Note: This is a temporary function to migrate config files from old os-specific config path to os-agnostic config path
-func migrateConfigFiles() error {
-	appName := buildAppName()
-	homePath, _ := os.UserHomeDir()
-	sourceDir := filepath.Join(homePath, ".config", appName)
-	destinationDir := buildAppConfigDirPath()
-
-	ok := fileutil.FolderExists(sourceDir)
-	if !ok {
-		return nil
-	}
-	return folderutil.MigrateDir(sourceDir, destinationDir)
 }
