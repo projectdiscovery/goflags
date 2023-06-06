@@ -8,10 +8,11 @@ import (
 )
 
 type Options struct {
-	name    string
-	Email   goflags.StringSlice
-	Phone   string
-	Address goflags.StringSlice
+	name     string
+	Email    goflags.StringSlice
+	Phone    string
+	Address  goflags.StringSlice
+	fileSize goflags.Size
 }
 
 func main() {
@@ -30,6 +31,7 @@ func main() {
 		flagSet.StringVarP(&testOptions.Phone, "phone", "ph", "", "phone of the user"),
 		flagSet.StringSliceVarP(&testOptions.Address, "address", "add", nil, "address of the user", goflags.StringSliceOptions),
 		flagSet.CallbackVarP(CheckUpdate, "update", "ut", "update this tool to latest version"),
+		flagSet.SizeVarP(&testOptions.fileSize, "max-size", "ms", "", "max file size"),
 	)
 
 	if err := flagSet.Parse(); err != nil {
