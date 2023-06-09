@@ -373,6 +373,10 @@ func tearDown(uniqueValue string) {
 }
 
 func TestConfigDirMigration(t *testing.T) {
+	// remove any args added by previous test
+	os.Args = []string{
+		os.Args[0],
+	}
 	// setup test old config dir
 	createEmptyFilesinDir(t, oldAppConfigDir)
 
