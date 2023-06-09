@@ -4,12 +4,14 @@ import (
 	"bytes"
 	"flag"
 	"os"
+	"path/filepath"
 	"reflect"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
 
+	fileutil "github.com/projectdiscovery/utils/file"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/stretchr/testify/require"
@@ -368,4 +370,47 @@ func TestSetDefaultStringSliceValue(t *testing.T) {
 func tearDown(uniqueValue string) {
 	flag.CommandLine = flag.NewFlagSet(uniqueValue, flag.ContinueOnError)
 	flag.CommandLine.Usage = flag.Usage
+}
+
+func TestConfigDirMigration(t *testing.T) {
+	// setup test old config dir
+	createEmptyFilesinDir(t, oldAppConfigDir)
+
+	flagset := NewFlagSet()
+	flagset.CommandLine = flag.NewFlagSet("goflags", flag.ContinueOnError)
+	newToolCfgDir := flagset.GetToolConfigDir()
+
+	// remove new config dir if it already exists from previous test
+	_ = os.RemoveAll(newToolCfgDir)
+
+	// create test flag and parse it
+	var testflag string
+	flagset.CreateGroup("Example", "Example",
+		flagset.StringVarP(&testflag, "test", "t", "", "test flag"),
+	)
+
+	if err := flagset.Parse(); err != nil {
+		require.Nil(t, err, "could not parse flags")
+	}
+
+	// check if config files are moved to new config dir
+	require.FileExistsf(t, filepath.Join(newToolCfgDir, "config.yaml"), "config file not created in new config dir")
+	require.FileExistsf(t, filepath.Join(newToolCfgDir, "provider-config.yaml"), "config file not created in new config dir")
+
+	// cleanup
+	_ = os.RemoveAll(oldAppConfigDir)
+	_ = os.RemoveAll(newToolCfgDir)
+
+	tearDown(t.Name())
+}
+
+func createEmptyFilesinDir(t *testing.T, dirname string) {
+	if !fileutil.FolderExists(dirname) {
+		fileutil.CreateFolder(dirname)
+	}
+	// create empty yaml config files
+	err := os.WriteFile(filepath.Join(oldAppConfigDir, "config.yaml"), []byte{}, os.ModePerm)
+	require.Nil(t, err, "could not create old config file")
+	err = os.WriteFile(filepath.Join(oldAppConfigDir, "provider-config.yaml"), []byte{}, os.ModePerm)
+	require.Nil(t, err, "could not create old config file")
 }

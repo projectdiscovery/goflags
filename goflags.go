@@ -7,7 +7,6 @@ import (
 	"io"
 	"os"
 	"path"
-	"path/filepath"
 	"reflect"
 	"strconv"
 	"strings"
@@ -16,6 +15,7 @@ import (
 
 	"github.com/cnf/structhash"
 	fileutil "github.com/projectdiscovery/utils/file"
+	folderutil "github.com/projectdiscovery/utils/folder"
 	"golang.org/x/exp/maps"
 	"gopkg.in/yaml.v3"
 )
@@ -98,18 +98,36 @@ func (flagSet *FlagSet) Parse() error {
 	flagSet.CommandLine.SetOutput(os.Stdout)
 	flagSet.CommandLine.Usage = flagSet.usageFunc
 	_ = flagSet.CommandLine.Parse(os.Args[1:])
+	configFilePath, _ := flagSet.GetConfigFilePath()
 
-	configFilePath, err := flagSet.GetConfigFilePath()
-	if err != nil {
-		return err
-	}
-	_ = os.MkdirAll(filepath.Dir(configFilePath), os.ModePerm)
+	// migrate data from old config dir to new one
+	// Ref: https://github.com/projectdiscovery/nuclei/issues/3576
+	flagSet.migrateConfigDir()
+
+	// if config file doesn't exist, create one
 	if !fileutil.FileExists(configFilePath) {
 		configData := flagSet.generateDefaultConfig()
+		configFileDir := flagSet.GetToolConfigDir()
+		if !fileutil.FolderExists(configFileDir) {
+			fileutil.CreateFolder(configFileDir)
+		}
 		return os.WriteFile(configFilePath, configData, os.ModePerm)
 	}
+
 	_ = flagSet.MergeConfigFile(configFilePath) // try to read default config after parsing flags
 	return nil
+}
+
+func (flagSet *FlagSet) migrateConfigDir() {
+	// migration condition
+	// 1. old config dir exists
+	// 2. new config dir doesn't exist
+	// 3. old config dir is not same as new config dir
+
+	if flagSet.GetToolConfigDir() != oldAppConfigDir && fileutil.FolderExists(oldAppConfigDir) && !fileutil.FolderExists(flagSet.GetToolConfigDir()) {
+		// move old config dir to new one
+		_ = folderutil.MigrateDir(oldAppConfigDir, flagSet.GetToolConfigDir())
+	}
 }
 
 // generateDefaultConfig generates a default YAML config file for a flagset.
