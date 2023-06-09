@@ -384,6 +384,25 @@ func TestConfigDirMigration(t *testing.T) {
 	flagset.CommandLine = flag.NewFlagSet("goflags", flag.ContinueOnError)
 	newToolCfgDir := flagset.GetToolConfigDir()
 
+	// cleanup and debug
+	defer func() {
+		// cleanup
+		if t.Failed() {
+			t.Logf("old config dir: %s", oldAppConfigDir)
+			t.Logf("new config dir: %s", newToolCfgDir)
+			cfgFiles, _ := os.ReadDir(oldAppConfigDir)
+			for _, cfgFile := range cfgFiles {
+				t.Logf("found config file in old dir : %s", cfgFile.Name())
+			}
+			cfgFiles, _ = os.ReadDir(newToolCfgDir)
+			for _, cfgFile := range cfgFiles {
+				t.Logf("found config file in new dir : %s", cfgFile.Name())
+			}
+		}
+		_ = os.RemoveAll(oldAppConfigDir)
+		_ = os.RemoveAll(newToolCfgDir)
+	}()
+
 	// remove new config dir if it already exists from previous test
 	_ = os.RemoveAll(newToolCfgDir)
 
@@ -400,10 +419,6 @@ func TestConfigDirMigration(t *testing.T) {
 	// check if config files are moved to new config dir
 	require.FileExistsf(t, filepath.Join(newToolCfgDir, "config.yaml"), "config file not created in new config dir")
 	require.FileExistsf(t, filepath.Join(newToolCfgDir, "provider-config.yaml"), "config file not created in new config dir")
-
-	// cleanup
-	_ = os.RemoveAll(oldAppConfigDir)
-	_ = os.RemoveAll(newToolCfgDir)
 
 	tearDown(t.Name())
 }
