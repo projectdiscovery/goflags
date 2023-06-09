@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"runtime"
 	"strconv"
 	"strings"
 	"testing"
@@ -416,9 +417,13 @@ func TestConfigDirMigration(t *testing.T) {
 		require.Nil(t, err, "could not parse flags")
 	}
 
-	// check if config files are moved to new config dir
-	require.FileExistsf(t, filepath.Join(newToolCfgDir, "config.yaml"), "config file not created in new config dir")
-	require.FileExistsf(t, filepath.Join(newToolCfgDir, "provider-config.yaml"), "config file not created in new config dir")
+	// oldAppConfigDir and newConfigDir is same in case of linux (unless sandbox or something else is used)
+	// migration will only happen on windows & macOS (darwin) Ref: https://pkg.go.dev/os#UserConfigDir
+	if oldAppConfigDir != newToolCfgDir || runtime.GOOS != "linux" {
+		// check if config files are moved to new config dir
+		require.FileExistsf(t, filepath.Join(newToolCfgDir, "config.yaml"), "config file not created in new config dir")
+		require.FileExistsf(t, filepath.Join(newToolCfgDir, "provider-config.yaml"), "config file not created in new config dir")
+	}
 
 	tearDown(t.Name())
 }
