@@ -410,7 +410,7 @@ func TestConfigDirMigration(t *testing.T) {
 
 func createEmptyFilesinDir(t *testing.T, dirname string) {
 	if !fileutil.FolderExists(dirname) {
-		fileutil.CreateFolder(dirname)
+		_ = fileutil.CreateFolder(dirname)
 	}
 	// create empty yaml config files
 	err := os.WriteFile(filepath.Join(oldAppConfigDir, "config.yaml"), []byte{}, os.ModePerm)

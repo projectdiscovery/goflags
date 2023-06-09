@@ -109,7 +109,7 @@ func (flagSet *FlagSet) Parse() error {
 		configData := flagSet.generateDefaultConfig()
 		configFileDir := flagSet.GetToolConfigDir()
 		if !fileutil.FolderExists(configFileDir) {
-			fileutil.CreateFolder(configFileDir)
+			_ = fileutil.CreateFolder(configFileDir)
 		}
 		return os.WriteFile(configFilePath, configData, os.ModePerm)
 	}
