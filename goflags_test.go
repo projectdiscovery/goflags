@@ -365,6 +365,44 @@ func TestSetDefaultStringSliceValue(t *testing.T) {
 	tearDown(t.Name())
 }
 
+func TestCaseSensitiveFlagSet(t *testing.T) {
+	flagSet := NewFlagSet()
+	flagSet.CaseSensitive = true
+	var verbose, keyVal bool
+	flagSet.CreateGroup("Test", "Test",
+		flagSet.BoolVarP(&verbose, "verbose", "v", false, "show verbose output"),
+		flagSet.BoolVarP(&keyVal, "var", "V", false, "custom vars in key=value format"),
+	)
+	output := &bytes.Buffer{}
+	flagSet.CommandLine.SetOutput(output)
+
+	os.Args = []string{
+		os.Args[0],
+		"-h",
+		"V",
+	}
+	flagSet.usageFunc()
+
+	resultOutput := output.String()
+	actual := resultOutput[strings.Index(resultOutput, "Flags:\n"):]
+	expected := "Flags:\n   -V, -var  custom vars in key=value format\n"
+	assert.Equal(t, expected, actual)
+
+	output = &bytes.Buffer{}
+	flagSet.CommandLine.SetOutput(output)
+	os.Args = []string{
+		os.Args[0],
+		"-h",
+		"v",
+	}
+	flagSet.usageFunc()
+
+	resultOutput = output.String()
+	actual = resultOutput[strings.Index(resultOutput, "Flags:\n"):]
+	expected = "Flags:\n   -v, -verbose  show verbose output\n"
+	assert.Equal(t, expected, actual)
+}
+
 func tearDown(uniqueValue string) {
 	flag.CommandLine = flag.NewFlagSet(uniqueValue, flag.ContinueOnError)
 	flag.CommandLine.Usage = flag.Usage
