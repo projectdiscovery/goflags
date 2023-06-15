@@ -563,16 +563,14 @@ func (flagSet *FlagSet) getGroupbyName(name string) groupData {
 func (flagSet *FlagSet) getFlagByName(name string) *FlagData {
 	var flagData *FlagData
 	flagSet.flagKeys.forEach(func(key string, data *FlagData) {
-		if flagSet.CaseSensitive {
-			if data.long == name || data.short == name {
-				flagData = data
-				return
-			}
-		} else {
-			if strings.EqualFold(data.long, name) || strings.EqualFold(data.short, name) {
-				flagData = data
-				return
-			}
+		// check if the items are equal
+		// - Case sensitive
+		equal := flagSet.CaseSensitive && (data.long == name || data.short == name)
+		// - Case insensitive
+		equalFold := !flagSet.CaseSensitive && (strings.EqualFold(data.long, name) || strings.EqualFold(data.short, name))
+		if equal || equalFold {
+			flagData = data
+			return
 		}
 	})
 	return flagData
