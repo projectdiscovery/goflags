@@ -22,6 +22,7 @@ import (
 
 // FlagSet is a list of flags for an application
 type FlagSet struct {
+	CaseSensitive  bool
 	Marshal        bool
 	description    string
 	flagKeys       InsertionOrderedMap
@@ -536,7 +537,7 @@ func (flagSet *FlagSet) usageFunc() {
 			flagSet.displayGroupUsageFunc(newUniqueDeduper(), group, cliOutput, writer)
 			return
 		}
-		flag := flagSet.getFlagByName(strings.ToLower(os.Args[2]))
+		flag := flagSet.getFlagByName(os.Args[2])
 		if flag != nil {
 			flagSet.displaySingleFlagUsageFunc(os.Args[2], flag, cliOutput, writer)
 			return
@@ -562,9 +563,16 @@ func (flagSet *FlagSet) getGroupbyName(name string) groupData {
 func (flagSet *FlagSet) getFlagByName(name string) *FlagData {
 	var flagData *FlagData
 	flagSet.flagKeys.forEach(func(key string, data *FlagData) {
-		if strings.EqualFold(data.long, name) || strings.EqualFold(data.short, name) {
-			flagData = data
-			return
+		if flagSet.CaseSensitive {
+			if data.long == name || data.short == name {
+				flagData = data
+				return
+			}
+		} else {
+			if strings.EqualFold(data.long, name) || strings.EqualFold(data.short, name) {
+				flagData = data
+				return
+			}
 		}
 	})
 	return flagData
