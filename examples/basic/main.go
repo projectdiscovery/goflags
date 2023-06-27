@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/projectdiscovery/goflags"
 )
@@ -13,6 +14,7 @@ type Options struct {
 	Phone    string
 	Address  goflags.StringSlice
 	fileSize goflags.Size
+	duration time.Duration
 }
 
 func main() {
@@ -32,6 +34,7 @@ func main() {
 		flagSet.StringSliceVarP(&testOptions.Address, "address", "add", nil, "address of the user", goflags.StringSliceOptions),
 		flagSet.CallbackVarP(CheckUpdate, "update", "ut", "update this tool to latest version"),
 		flagSet.SizeVarP(&testOptions.fileSize, "max-size", "ms", "", "max file size"),
+		flagSet.DurationVar(&testOptions.duration, "timeout", time.Hour, "timeout"),
 	)
 
 	if err := flagSet.Parse(); err != nil {
