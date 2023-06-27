@@ -448,34 +448,6 @@ func (flagSet *FlagSet) PortVarP(field *Port, long, short string, defaultValue [
 	return flagData
 }
 
-// DurationVarP adds a duration flag with a shortname and longname
-func (flagSet *FlagSet) DurationVarP(field *time.Duration, long, short string, defaultValue time.Duration, usage string) *FlagData {
-	flagSet.CommandLine.DurationVar(field, short, defaultValue, usage)
-	flagSet.CommandLine.DurationVar(field, long, defaultValue, usage)
-
-	flagData := &FlagData{
-		usage:        usage,
-		short:        short,
-		long:         long,
-		defaultValue: defaultValue,
-	}
-	flagSet.flagKeys.Set(short, flagData)
-	flagSet.flagKeys.Set(long, flagData)
-	return flagData
-}
-
-// DurationVar adds a duration flag with a longname
-func (flagSet *FlagSet) DurationVar(field *time.Duration, long string, defaultValue time.Duration, usage string) *FlagData {
-	flagSet.CommandLine.DurationVar(field, long, defaultValue, usage)
-	flagData := &FlagData{
-		usage:        usage,
-		long:         long,
-		defaultValue: defaultValue,
-	}
-	flagSet.flagKeys.Set(long, flagData)
-	return flagData
-}
-
 // EnumVar adds a enum flag with a longname
 func (flagSet *FlagSet) EnumVar(field *string, long string, defaultValue EnumVariable, usage string, allowedTypes AllowdTypes) *FlagData {
 	return flagSet.EnumVarP(field, long, "", defaultValue, usage, allowedTypes)
