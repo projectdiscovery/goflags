@@ -22,6 +22,7 @@ import (
 
 // FlagSet is a list of flags for an application
 type FlagSet struct {
+	CaseSensitive  bool
 	Marshal        bool
 	description    string
 	flagKeys       InsertionOrderedMap
@@ -465,34 +466,6 @@ func (flagSet *FlagSet) PortVarP(field *Port, long, short string, defaultValue [
 	return flagData
 }
 
-// DurationVarP adds a duration flag with a shortname and longname
-func (flagSet *FlagSet) DurationVarP(field *time.Duration, long, short string, defaultValue time.Duration, usage string) *FlagData {
-	flagSet.CommandLine.DurationVar(field, short, defaultValue, usage)
-	flagSet.CommandLine.DurationVar(field, long, defaultValue, usage)
-
-	flagData := &FlagData{
-		usage:        usage,
-		short:        short,
-		long:         long,
-		defaultValue: defaultValue,
-	}
-	flagSet.flagKeys.Set(short, flagData)
-	flagSet.flagKeys.Set(long, flagData)
-	return flagData
-}
-
-// DurationVar adds a duration flag with a longname
-func (flagSet *FlagSet) DurationVar(field *time.Duration, long string, defaultValue time.Duration, usage string) *FlagData {
-	flagSet.CommandLine.DurationVar(field, long, defaultValue, usage)
-	flagData := &FlagData{
-		usage:        usage,
-		long:         long,
-		defaultValue: defaultValue,
-	}
-	flagSet.flagKeys.Set(long, flagData)
-	return flagData
-}
-
 // EnumVar adds a enum flag with a longname
 func (flagSet *FlagSet) EnumVar(field *string, long string, defaultValue EnumVariable, usage string, allowedTypes AllowdTypes) *FlagData {
 	return flagSet.EnumVarP(field, long, "", defaultValue, usage, allowedTypes)
@@ -554,7 +527,7 @@ func (flagSet *FlagSet) usageFunc() {
 			flagSet.displayGroupUsageFunc(newUniqueDeduper(), group, cliOutput, writer)
 			return
 		}
-		flag := flagSet.getFlagByName(strings.ToLower(os.Args[2]))
+		flag := flagSet.getFlagByName(os.Args[2])
 		if flag != nil {
 			flagSet.displaySingleFlagUsageFunc(os.Args[2], flag, cliOutput, writer)
 			return
@@ -580,7 +553,12 @@ func (flagSet *FlagSet) getGroupbyName(name string) groupData {
 func (flagSet *FlagSet) getFlagByName(name string) *FlagData {
 	var flagData *FlagData
 	flagSet.flagKeys.forEach(func(key string, data *FlagData) {
-		if strings.EqualFold(data.long, name) || strings.EqualFold(data.short, name) {
+		// check if the items are equal
+		// - Case sensitive
+		equal := flagSet.CaseSensitive && (data.long == name || data.short == name)
+		// - Case insensitive
+		equalFold := !flagSet.CaseSensitive && (strings.EqualFold(data.long, name) || strings.EqualFold(data.short, name))
+		if equal || equalFold {
 			flagData = data
 			return
 		}
