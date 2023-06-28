@@ -1,4 +1,4 @@
-module github.com/mshrn/goflags
+module github.com/wshrn/goflags
 
 go 1.18
 
