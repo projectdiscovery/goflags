@@ -1,4 +1,4 @@
-module github.com/projectdiscovery/goflags
+module github.com/mshrn/goflags
 
 go 1.18
 
