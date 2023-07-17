@@ -127,7 +127,7 @@ func (flagSet *FlagSet) migrateConfigDir() {
 
 	if flagSet.GetToolConfigDir() != oldAppConfigDir && fileutil.FolderExists(oldAppConfigDir) && !fileutil.FolderExists(flagSet.GetToolConfigDir()) {
 		// move old config dir to new one
-		_ = folderutil.MigrateDir(oldAppConfigDir, flagSet.GetToolConfigDir())
+		_ = folderutil.SyncDirectory(oldAppConfigDir, flagSet.GetToolConfigDir())
 	}
 }
 
