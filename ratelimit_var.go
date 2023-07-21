@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
 
 	stringsutil "github.com/projectdiscovery/utils/strings"
 	timeutil "github.com/projectdiscovery/utils/time"
@@ -147,8 +148,17 @@ func parseRateLimit(s string) (RateLimit, error) {
 	if err != nil {
 		return RateLimit{}, errors.New("parse error: " + err.Error())
 	}
+	timeValue := sArr[1]
+	if len(timeValue) > 0 {
+		// check if time is given ex: 1s
+		// if given value is just s (add prefix 1)
+		firstChar := timeValue[0]
+		if !unicode.IsDigit(rune(firstChar)) {
+			timeValue = "1" + timeValue
+		}
+	}
 
-	duration, err := timeutil.ParseDuration(sArr[1])
+	duration, err := timeutil.ParseDuration(timeValue)
 	if err != nil {
 		return RateLimit{}, errors.New("parse error: " + err.Error())
 	}
