@@ -14,7 +14,7 @@ func TestRateLimitMapVar(t *testing.T) {
 		var rateLimitMap RateLimitMap
 		flagSet := NewFlagSet()
 		flagSet.CreateGroup("Config", "Config",
-			flagSet.RateLimitMapVarP(&rateLimitMap, "rate-limits", "rls", []string{"hackertarget=1/ms"}, "rate limits"),
+			flagSet.RateLimitMapVarP(&rateLimitMap, "rate-limits", "rls", []string{"hackertarget=1/ms"}, "rate limits", CommaSeparatedStringSliceOptions),
 		)
 		os.Args = []string{
 			os.Args[0],
@@ -25,11 +25,27 @@ func TestRateLimitMapVar(t *testing.T) {
 		tearDown(t.Name())
 	})
 
+	t.Run("multiple-default-value", func(t *testing.T) {
+		var rateLimitMap RateLimitMap
+		flagSet := NewFlagSet()
+		flagSet.CreateGroup("Config", "Config",
+			flagSet.RateLimitMapVarP(&rateLimitMap, "rate-limits", "rls", []string{"hackertarget=1/s,github=1/ms"}, "rate limits", CommaSeparatedStringSliceOptions),
+		)
+		os.Args = []string{
+			os.Args[0],
+		}
+		err := flagSet.Parse()
+		assert.Nil(t, err)
+		assert.Equal(t, RateLimit{MaxCount: 1, Duration: time.Second}, rateLimitMap.AsMap()["hackertarget"])
+		assert.Equal(t, RateLimit{MaxCount: 1, Duration: time.Millisecond}, rateLimitMap.AsMap()["github"])
+		tearDown(t.Name())
+	})
+
 	t.Run("valid-rate-limit", func(t *testing.T) {
 		var rateLimitMap RateLimitMap
 		flagSet := NewFlagSet()
 		flagSet.CreateGroup("Config", "Config",
-			flagSet.RateLimitMapVarP(&rateLimitMap, "rate-limits", "rls", nil, "rate limits"),
+			flagSet.RateLimitMapVarP(&rateLimitMap, "rate-limits", "rls", nil, "rate limits", CommaSeparatedStringSliceOptions),
 		)
 		os.Args = []string{
 			os.Args[0],
@@ -45,7 +61,7 @@ func TestRateLimitMapVar(t *testing.T) {
 		var rateLimitMap RateLimitMap
 		flagSet := NewFlagSet()
 		flagSet.CreateGroup("Config", "Config",
-			flagSet.RateLimitMapVarP(&rateLimitMap, "rate-limits", "rls", nil, "rate limits"),
+			flagSet.RateLimitMapVarP(&rateLimitMap, "rate-limits", "rls", nil, "rate limits", CommaSeparatedStringSliceOptions),
 		)
 		os.Args = []string{
 			os.Args[0],

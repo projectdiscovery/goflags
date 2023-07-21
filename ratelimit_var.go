@@ -69,28 +69,31 @@ func (rateLimitMap RateLimitMap) String() string {
 
 	var items string
 	for k, v := range rateLimitMap.kv {
-		items += fmt.Sprintf("\"%s\"=\"%s\"%s", k, v.Duration.String(), kvSep)
+		items += fmt.Sprintf("\"%s\":\"%d/%s\",", k, v.MaxCount, v.Duration.String())
 	}
-	defaultBuilder.WriteString(stringsutil.TrimSuffixAny(items, ",", "="))
+	defaultBuilder.WriteString(stringsutil.TrimSuffixAny(items, ",", ":"))
 	defaultBuilder.WriteString("}")
 	return defaultBuilder.String()
 }
 
 // RateLimitMapVar adds a ratelimit flag with a longname
-func (flagSet *FlagSet) RateLimitMapVar(field *RateLimitMap, long string, defaultValue []string, usage string) *FlagData {
-	return flagSet.RateLimitMapVarP(field, long, "", defaultValue, usage)
+func (flagSet *FlagSet) RateLimitMapVar(field *RateLimitMap, long string, defaultValue []string, usage string, options Options) *FlagData {
+	return flagSet.RateLimitMapVarP(field, long, "", defaultValue, usage, options)
 }
 
 // RateLimitMapVarP adds a ratelimit flag with a short name and long name.
 // It is equivalent to RateLimitMapVar, and also allows specifying ratelimits in days (e.g., "hackertarget=2/d" 2 requests per day, which is equivalent to 24h).
-func (flagSet *FlagSet) RateLimitMapVarP(field *RateLimitMap, long, short string, defaultValue []string, usage string) *FlagData {
+func (flagSet *FlagSet) RateLimitMapVarP(field *RateLimitMap, long, short string, defaultValue StringSlice, usage string, options Options) *FlagData {
 	if field == nil {
 		panic(fmt.Errorf("field cannot be nil for flag -%v", long))
 	}
 
-	for _, item := range defaultValue {
-		if err := field.Set(item); err != nil {
-			panic(fmt.Errorf("failed to set default value for flag -%v: %v", long, err))
+	for _, defaultItem := range defaultValue {
+		values, _ := ToStringSlice(defaultItem, options)
+		for _, value := range values {
+			if err := field.Set(value); err != nil {
+				panic(fmt.Errorf("failed to set default value for flag -%v: %v", long, err))
+			}
 		}
 	}
 
