@@ -7,13 +7,12 @@ import (
 	"strings"
 	"time"
 
-	sliceutil "github.com/projectdiscovery/utils/slice"
 	stringsutil "github.com/projectdiscovery/utils/strings"
 	timeutil "github.com/projectdiscovery/utils/time"
 )
 
 var (
-	AllowedUnits       = []string{"ns", "us", "ms", "s", "m"}
+	MaxRateLimitTime   = time.Minute // anything above time.Minute is not practical (for our use case)
 	rateLimitOptionMap map[*RateLimitMap]Options
 )
 
@@ -141,7 +140,7 @@ func parseRateLimit(s string) (RateLimit, error) {
 	sArr := strings.Split(s, "/")
 
 	if len(sArr) < 2 {
-		return RateLimit{}, errors.New("parse error")
+		return RateLimit{}, errors.New("parse error: expected format k=v/d (e.g., scanme.sh=10/s got " + s)
 	}
 
 	maxCount, err := strconv.ParseUint(sArr[0], 10, 64)
@@ -149,13 +148,13 @@ func parseRateLimit(s string) (RateLimit, error) {
 		return RateLimit{}, errors.New("parse error: " + err.Error())
 	}
 
-	duration, err := timeutil.ParseDuration("1" + sArr[1])
+	duration, err := timeutil.ParseDuration(sArr[1])
 	if err != nil {
 		return RateLimit{}, errors.New("parse error: " + err.Error())
 	}
 
-	if !sliceutil.Contains(AllowedUnits, sArr[1]) {
-		return RateLimit{}, errors.New("unit " + sArr[1] + " is not allowed")
+	if MaxRateLimitTime < duration {
+		return RateLimit{}, fmt.Errorf("duration cannot be more than %v but got %v", MaxRateLimitTime, duration)
 	}
 
 	return RateLimit{MaxCount: uint(maxCount), Duration: duration}, nil
