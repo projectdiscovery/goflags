@@ -38,6 +38,7 @@ func main() {
 		flagSet.SizeVarP(&testOptions.fileSize, "max-size", "ms", "", "max file size"),
 		flagSet.DurationVar(&testOptions.duration, "timeout", time.Hour, "timeout"),
 	)
+	flagSet.SetCustomHelpText("EXAMPLE USAGE:\ngo run ./examples/basic [OPTIONS]")
 
 	if err := flagSet.Parse(); err != nil {
 		log.Fatal(err)

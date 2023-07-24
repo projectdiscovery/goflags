@@ -25,6 +25,7 @@ type FlagSet struct {
 	CaseSensitive  bool
 	Marshal        bool
 	description    string
+	customHelpText string
 	flagKeys       InsertionOrderedMap
 	groups         []groupData
 	CommandLine    *flag.FlagSet
@@ -80,6 +81,11 @@ func (flagData *FlagData) Hash() string {
 // SetDescription sets the description field for a flagSet to a value.
 func (flagSet *FlagSet) SetDescription(description string) {
 	flagSet.description = description
+}
+
+// SetCustomHelpText sets the help text for a flagSet to a value. This variable appends text to the default help text.
+func (flagSet *FlagSet) SetCustomHelpText(helpText string) {
+	flagSet.customHelpText = helpText
 }
 
 // SetGroup sets a group with name and description for the command line options
@@ -501,8 +507,7 @@ func (flagSet *FlagSet) usageFunc() {
 
 	writer := tabwriter.NewWriter(cliOutput, 0, 0, 1, ' ', 0)
 
-	// If user has specified group with help and we have groups, return
-	// with it's usage function
+	// If a user has specified a group with help, and we have groups, return with the tool's usage function
 	if len(flagSet.groups) > 0 && len(os.Args) == 3 {
 		group := flagSet.getGroupbyName(strings.ToLower(os.Args[2]))
 		if group.name != "" {
@@ -520,6 +525,11 @@ func (flagSet *FlagSet) usageFunc() {
 		flagSet.usageFuncForGroups(cliOutput, writer)
 	} else {
 		flagSet.usageFuncInternal(writer)
+	}
+
+	// If there is a custom help text specified, print it
+	if !isEmpty(flagSet.customHelpText) {
+		fmt.Fprintf(cliOutput, "\n%s\n", flagSet.customHelpText)
 	}
 }
 
@@ -641,10 +651,6 @@ func (u *uniqueDeduper) isUnique(data *FlagData) bool {
 	return true
 }
 
-func isNotBlank(value string) bool {
-	return len(strings.TrimSpace(value)) != 0
-}
-
 func createUsageString(data *FlagData, currentFlag *flag.Flag) string {
 	valueType := reflect.TypeOf(currentFlag.Value)
 
@@ -703,7 +709,7 @@ func createUsageFlagNames(data *FlagData) string {
 
 	var validFlags []string
 	addValidParam := func(value string) {
-		if isNotBlank(value) {
+		if !isEmpty(value) {
 			validFlags = append(validFlags, fmt.Sprintf("-%s", value))
 		}
 	}
