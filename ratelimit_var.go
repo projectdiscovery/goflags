@@ -46,16 +46,15 @@ func (rateLimitMap *RateLimitMap) Set(value string) error {
 	}
 
 	for _, rateLimit := range rateLimits {
-
 		var k, v string
 		if idxSep := strings.Index(rateLimit, kvSep); idxSep > 0 {
 			k = rateLimit[:idxSep]
 			v = rateLimit[idxSep+1:]
 		}
+
 		// note:
 		// - inserting multiple times the same key will override the previous v
 		// - empty string is legitimate rateLimit
-
 		if k != "" {
 			rateLimit, err := parseRateLimit(v)
 			if err != nil {
