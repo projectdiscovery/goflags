@@ -15,6 +15,7 @@ type Options struct {
 	Address  goflags.StringSlice
 	fileSize goflags.Size
 	duration time.Duration
+	rls      goflags.RateLimitMap
 }
 
 func main() {
@@ -28,6 +29,7 @@ func main() {
 	flagSet.CreateGroup("info", "Info",
 		flagSet.StringVarP(&testOptions.name, "name", "n", "", "name of the user"),
 		flagSet.StringSliceVarP(&testOptions.Email, "email", "e", nil, "email of the user", goflags.CommaSeparatedStringSliceOptions),
+		flagSet.RateLimitMapVarP(&testOptions.rls, "rate-limits", "rls", nil, "rate limits in format k=v/d i.e hackertarget=10/s", goflags.CommaSeparatedStringSliceOptions),
 	)
 	flagSet.CreateGroup("additional", "Additional",
 		flagSet.StringVarP(&testOptions.Phone, "phone", "ph", "", "phone of the user"),
@@ -40,4 +42,7 @@ func main() {
 	if err := flagSet.Parse(); err != nil {
 		log.Fatal(err)
 	}
+
+	// ratelimits value is
+	fmt.Printf("Got RateLimits: %+v\n", testOptions.rls)
 }
