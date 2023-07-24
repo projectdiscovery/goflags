@@ -528,7 +528,7 @@ func (flagSet *FlagSet) usageFunc() {
 	}
 
 	// If there is a custom help text specified, print it
-	if isNotBlank(flagSet.customHelpText) {
+	if !isEmpty(flagSet.customHelpText) {
 		fmt.Fprintf(cliOutput, "\n%s\n", flagSet.customHelpText)
 	}
 }
@@ -651,10 +651,6 @@ func (u *uniqueDeduper) isUnique(data *FlagData) bool {
 	return true
 }
 
-func isNotBlank(value string) bool {
-	return len(strings.TrimSpace(value)) != 0
-}
-
 func createUsageString(data *FlagData, currentFlag *flag.Flag) string {
 	valueType := reflect.TypeOf(currentFlag.Value)
 
@@ -713,7 +709,7 @@ func createUsageFlagNames(data *FlagData) string {
 
 	var validFlags []string
 	addValidParam := func(value string) {
-		if isNotBlank(value) {
+		if !isEmpty(value) {
 			validFlags = append(validFlags, fmt.Sprintf("-%s", value))
 		}
 	}
