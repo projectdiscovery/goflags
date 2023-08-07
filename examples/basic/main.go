@@ -16,6 +16,7 @@ type Options struct {
 	fileSize goflags.Size
 	duration time.Duration
 	rls      goflags.RateLimitMap
+	severity []string
 }
 
 func main() {
@@ -37,6 +38,7 @@ func main() {
 		flagSet.CallbackVarP(CheckUpdate, "update", "ut", "update this tool to latest version"),
 		flagSet.SizeVarP(&testOptions.fileSize, "max-size", "ms", "", "max file size"),
 		flagSet.DurationVar(&testOptions.duration, "timeout", time.Hour, "timeout"),
+		flagSet.EnumSliceVarP(&testOptions.severity, "severity", "s", []goflags.EnumVariable{2}, "severity of the scan", goflags.AllowdTypes{"low": goflags.EnumVariable(0), "medium": goflags.EnumVariable(1), "high": goflags.EnumVariable(2)}),
 	)
 	flagSet.SetCustomHelpText("EXAMPLE USAGE:\ngo run ./examples/basic [OPTIONS]")
 
@@ -45,5 +47,11 @@ func main() {
 	}
 
 	// ratelimits value is
-	fmt.Printf("Got RateLimits: %+v\n", testOptions.rls)
+	if len(testOptions.rls.AsMap()) > 0 {
+		fmt.Printf("Got RateLimits: %+v\n", testOptions.rls)
+	}
+
+	if len(testOptions.severity) > 0 {
+		fmt.Printf("Got Severity: %+v\n", testOptions.severity)
+	}
 }
