@@ -486,6 +486,41 @@ func (flagSet *FlagSet) EnumVarP(field *string, long, short string, defaultValue
 	return flagData
 }
 
+// EnumVar adds a enum flag with a longname
+func (flagSet *FlagSet) EnumSliceVar(field *[]string, long string, defaultValues []EnumVariable, usage string, allowedTypes AllowdTypes) *FlagData {
+	return flagSet.EnumSliceVarP(field, long, "", defaultValues, usage, allowedTypes)
+}
+
+// EnumVarP adds a enum flag with a shortname and longname
+func (flagSet *FlagSet) EnumSliceVarP(field *[]string, long, short string, defaultValues []EnumVariable, usage string, allowedTypes AllowdTypes) *FlagData {
+	var defaults []string
+	for k, v := range allowedTypes {
+		for _, defaultValue := range defaultValues {
+			if v == defaultValue {
+				defaults = append(defaults, k)
+			}
+		}
+	}
+	if len(defaults) == 0 {
+		panic("undefined default value")
+	}
+
+	*field = defaults
+	flagData := &FlagData{
+		usage:        usage,
+		long:         long,
+		defaultValue: strings.Join(*field, ","),
+	}
+	if short != "" {
+		flagData.short = short
+		flagSet.CommandLine.Var(&EnumSliceVar{allowedTypes, field}, short, usage)
+		flagSet.flagKeys.Set(short, flagData)
+	}
+	flagSet.CommandLine.Var(&EnumSliceVar{allowedTypes, field}, long, usage)
+	flagSet.flagKeys.Set(long, flagData)
+	return flagData
+}
+
 func (flagSet *FlagSet) usageFunc() {
 	var helpAsked bool
 
