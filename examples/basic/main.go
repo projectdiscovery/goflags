@@ -17,6 +17,9 @@ type Options struct {
 	duration time.Duration
 	rls      goflags.RateLimitMap
 	severity []string
+	// Dynamic
+	titleSize int
+	target    string
 }
 
 func main() {
@@ -40,11 +43,19 @@ func main() {
 		flagSet.DurationVar(&testOptions.duration, "timeout", time.Hour, "timeout"),
 		flagSet.EnumSliceVarP(&testOptions.severity, "severity", "s", []goflags.EnumVariable{2}, "severity of the scan", goflags.AllowdTypes{"low": goflags.EnumVariable(0), "medium": goflags.EnumVariable(1), "high": goflags.EnumVariable(2)}),
 	)
+	flagSet.CreateGroup("Dynmaic", "Dynamic",
+		flagSet.DynamicVarP(&testOptions.titleSize, "title", "t", 50, "first N characters of the title"),
+		flagSet.DynamicVarP(&testOptions.target, "target", "u", "https://example.com", "target url"),
+	)
 	flagSet.SetCustomHelpText("EXAMPLE USAGE:\ngo run ./examples/basic [OPTIONS]")
 
 	if err := flagSet.Parse(); err != nil {
 		log.Fatal(err)
 	}
+
+	// TODO: remove this
+	fmt.Println("title size:", testOptions.titleSize)
+	fmt.Println("target:", testOptions.target)
 
 	// ratelimits value is
 	if len(testOptions.rls.AsMap()) > 0 {
