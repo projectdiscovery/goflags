@@ -16,6 +16,7 @@ import (
 
 	"github.com/cnf/structhash"
 	fileutil "github.com/projectdiscovery/utils/file"
+	permissionutil "github.com/projectdiscovery/utils/permission"
 	"golang.org/x/exp/maps"
 	"gopkg.in/yaml.v3"
 )
@@ -110,10 +111,10 @@ func (flagSet *FlagSet) Parse() error {
 	if err != nil {
 		return err
 	}
-	_ = os.MkdirAll(filepath.Dir(configFilePath), os.ModePerm)
+	_ = os.MkdirAll(filepath.Dir(configFilePath), permissionutil.ConfigFolderPermission)
 	if !fileutil.FileExists(configFilePath) {
 		configData := flagSet.generateDefaultConfig()
-		return os.WriteFile(configFilePath, configData, os.ModePerm)
+		return os.WriteFile(configFilePath, configData, permissionutil.ConfigFilePermission)
 	}
 	_ = flagSet.MergeConfigFile(configFilePath) // try to read default config after parsing flags
 	return nil
