@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	permissionutil "github.com/projectdiscovery/utils/permission"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/stretchr/testify/require"
@@ -63,7 +64,7 @@ severity:
 int-value: 543
 bool-value: true
 duration-value: 1h`
-	err := os.WriteFile("test.yaml", []byte(configFileData), os.ModePerm)
+	err := os.WriteFile("test.yaml", []byte(configFileData), permissionutil.ConfigFilePermission)
 	require.Nil(t, err, "could not write temporary config")
 	defer os.Remove("test.yaml")
 
@@ -303,7 +304,7 @@ func TestParseFileCommaSeparatedStringSlice(t *testing.T) {
 	testFileData := `value1
 Value2 "
 value3`
-	err := os.WriteFile(testFile, []byte(testFileData), os.ModePerm)
+	err := os.WriteFile(testFile, []byte(testFileData), permissionutil.ConfigFilePermission)
 	require.Nil(t, err, "could not write temporary values file")
 	defer os.Remove(testFile)
 
@@ -332,7 +333,7 @@ config-only:
  - test
  - test2
  `
-	err := os.WriteFile("test.yaml", []byte(configFileData), os.ModePerm)
+	err := os.WriteFile("test.yaml", []byte(configFileData), permissionutil.ConfigFilePermission)
 	require.Nil(t, err, "could not write temporary config")
 	defer os.Remove("test.yaml")
 
