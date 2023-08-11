@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
+	"strings"
 )
 
 type dynamicFlag struct {
@@ -54,6 +55,13 @@ func (df *dynamicFlag) Set(value string) error {
 			return nil
 		}
 		*stringField = value
+	case reflect.Slice:
+		sliceField := df.field.(*[]string)
+		if isBoolValue {
+			*sliceField = df.defaultValue.([]string)
+			return nil
+		}
+		*sliceField = append(*sliceField, strings.Split(value, ",")...)
 	default:
 		return errors.New("unsupported type")
 	}
@@ -70,8 +78,10 @@ func (df *dynamicFlag) String() string {
 
 // DynamicVar acts as flag with a default value or a option with value
 // example:
-//   var titleSize int
-//   flagSet.DynamicVar(&titleSize, "title", 50, "first N characters of the title")
+//
+//	var titleSize int
+//	flagSet.DynamicVar(&titleSize, "title", 50, "first N characters of the title")
+//
 // > go run ./examples/basic -title or go run ./examples/basic -title=100
 // In case of `go run ./examples/basic -title` it will use default value 50
 func (flagSet *FlagSet) DynamicVar(field interface{}, long string, defaultValue interface{}, usage string) *FlagData {

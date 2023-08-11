@@ -20,6 +20,7 @@ type Options struct {
 	// Dynamic
 	titleSize int
 	target    string
+	hashes    []string
 }
 
 func main() {
@@ -46,6 +47,7 @@ func main() {
 	flagSet.CreateGroup("Dynmaic", "Dynamic",
 		flagSet.DynamicVarP(&testOptions.titleSize, "title", "t", 50, "first N characters of the title"),
 		flagSet.DynamicVarP(&testOptions.target, "target", "u", "https://example.com", "target url"),
+		flagSet.DynamicVarP(&testOptions.hashes, "hashes", "hs", []string{"md5", "sha1"}, "supported hashes"),
 	)
 	flagSet.SetCustomHelpText("EXAMPLE USAGE:\ngo run ./examples/basic [OPTIONS]")
 
@@ -56,6 +58,7 @@ func main() {
 	// TODO: remove this
 	fmt.Println("title size:", testOptions.titleSize)
 	fmt.Println("target:", testOptions.target)
+	fmt.Println("hashes:", testOptions.hashes)
 
 	// ratelimits value is
 	if len(testOptions.rls.AsMap()) > 0 {
