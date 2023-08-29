@@ -17,6 +17,10 @@ type Options struct {
 	duration time.Duration
 	rls      goflags.RateLimitMap
 	severity []string
+	// Dynamic
+	titleSize int
+	target    string
+	hashes    []string
 }
 
 func main() {
@@ -40,6 +44,11 @@ func main() {
 		flagSet.DurationVar(&testOptions.duration, "timeout", time.Hour, "timeout"),
 		flagSet.EnumSliceVarP(&testOptions.severity, "severity", "s", []goflags.EnumVariable{2}, "severity of the scan", goflags.AllowdTypes{"low": goflags.EnumVariable(0), "medium": goflags.EnumVariable(1), "high": goflags.EnumVariable(2)}),
 	)
+	flagSet.CreateGroup("Dynmaic", "Dynamic",
+		flagSet.DynamicVarP(&testOptions.titleSize, "title", "t", 50, "first N characters of the title"),
+		flagSet.DynamicVarP(&testOptions.target, "target", "u", "https://example.com", "target url"),
+		flagSet.DynamicVarP(&testOptions.hashes, "hashes", "hs", []string{"md5", "sha1"}, "supported hashes"),
+	)
 	flagSet.SetCustomHelpText("EXAMPLE USAGE:\ngo run ./examples/basic [OPTIONS]")
 
 	if err := flagSet.Parse(); err != nil {
@@ -54,4 +63,9 @@ func main() {
 	if len(testOptions.severity) > 0 {
 		fmt.Printf("Got Severity: %+v\n", testOptions.severity)
 	}
+
+	fmt.Println("Dynamic Values Output")
+	fmt.Println("title size:", testOptions.titleSize)
+	fmt.Println("target:", testOptions.target)
+	fmt.Println("hashes:", testOptions.hashes)
 }
