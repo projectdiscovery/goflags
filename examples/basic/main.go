@@ -55,11 +55,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// TODO: remove this
-	fmt.Println("title size:", testOptions.titleSize)
-	fmt.Println("target:", testOptions.target)
-	fmt.Println("hashes:", testOptions.hashes)
-
 	// ratelimits value is
 	if len(testOptions.rls.AsMap()) > 0 {
 		fmt.Printf("Got RateLimits: %+v\n", testOptions.rls)
@@ -68,4 +63,9 @@ func main() {
 	if len(testOptions.severity) > 0 {
 		fmt.Printf("Got Severity: %+v\n", testOptions.severity)
 	}
+
+	fmt.Println("Dynamic Values Output")
+	fmt.Println("title size:", testOptions.titleSize)
+	fmt.Println("target:", testOptions.target)
+	fmt.Println("hashes:", testOptions.hashes)
 }
