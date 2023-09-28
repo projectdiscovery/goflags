@@ -3,6 +3,7 @@ package goflags
 import (
 	"bytes"
 	"flag"
+	"fmt"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -13,6 +14,7 @@ import (
 
 	fileutil "github.com/projectdiscovery/utils/file"
 	osutil "github.com/projectdiscovery/utils/os"
+	permissionutil "github.com/projectdiscovery/utils/permission"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/stretchr/testify/require"
@@ -65,7 +67,7 @@ severity:
 int-value: 543
 bool-value: true
 duration-value: 1h`
-	err := os.WriteFile("test.yaml", []byte(configFileData), os.ModePerm)
+	err := os.WriteFile("test.yaml", []byte(configFileData), permissionutil.ConfigFilePermission)
 	require.Nil(t, err, "could not write temporary config")
 	defer os.Remove("test.yaml")
 
@@ -90,6 +92,7 @@ func TestUsageOrder(t *testing.T) {
 	var intData int
 	var boolData bool
 	var enumData string
+	var enumSliceData []string
 
 	flagSet.SetGroup("String", "String")
 	flagSet.StringVar(&stringData, "string-value", "", "String example value example").Group("String")
@@ -122,6 +125,12 @@ func TestUsageOrder(t *testing.T) {
 		"two":  EnumVariable(2),
 	}).Group("Enum")
 
+	flagSet.EnumSliceVarP(&enumSliceData, "enum-slice-with-default-value", "esn", []EnumVariable{EnumVariable(0)}, "Enum with default value(zero/one/two)", AllowdTypes{
+		"zero": EnumVariable(0),
+		"one":  EnumVariable(1),
+		"two":  EnumVariable(2),
+	}).Group("Enum")
+
 	flagSet.SetGroup("Update", "Update")
 	flagSet.CallbackVar(func() {}, "update", "update tool_1 to the latest released version").Group("Update")
 	flagSet.CallbackVarP(func() {}, "disable-update-check", "duc", "disable automatic update check").Group("Update")
@@ -137,6 +146,7 @@ func TestUsageOrder(t *testing.T) {
 
 	resultOutput := output.String()
 	actual := resultOutput[strings.Index(resultOutput, "Flags:\n"):]
+	fmt.Println(actual)
 
 	expected :=
 		`Flags:
@@ -161,7 +171,8 @@ BOOLEAN:
    -bool-with-default-value          Bool with default value example (default true)
    -bwdv, -bool-with-default-value2  Bool with default value example #2 (default true)
 ENUM:
-   -en, -enum-with-default-value value  Enum with default value(zero/one/two) (default zero)
+   -en, -enum-with-default-value value         Enum with default value(zero/one/two) (default zero)
+   -esn, -enum-slice-with-default-value value  Enum with default value(zero/one/two) (default zero)
 UPDATE:
    -update                      update tool_1 to the latest released version
    -duc, -disable-update-check  disable automatic update check
@@ -296,7 +307,7 @@ func TestParseFileCommaSeparatedStringSlice(t *testing.T) {
 	testFileData := `value1
 Value2 "
 value3`
-	err := os.WriteFile(testFile, []byte(testFileData), os.ModePerm)
+	err := os.WriteFile(testFile, []byte(testFileData), permissionutil.ConfigFilePermission)
 	require.Nil(t, err, "could not write temporary values file")
 	defer os.Remove(testFile)
 
@@ -325,7 +336,7 @@ config-only:
  - test
  - test2
  `
-	err := os.WriteFile("test.yaml", []byte(configFileData), os.ModePerm)
+	err := os.WriteFile("test.yaml", []byte(configFileData), permissionutil.ConfigFilePermission)
 	require.Nil(t, err, "could not write temporary config")
 	defer os.Remove("test.yaml")
 

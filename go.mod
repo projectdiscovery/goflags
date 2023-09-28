@@ -1,6 +1,6 @@
 module github.com/projectdiscovery/goflags
 
-go 1.18
+go 1.20
 
 require (
 	github.com/cnf/structhash v0.0.0-20201127153200-e1b16c1ebc08
@@ -14,7 +14,7 @@ require (
 	github.com/miekg/dns v1.1.55 // indirect
 	github.com/projectdiscovery/blackrock v0.0.1 // indirect
 	golang.org/x/mod v0.8.0 // indirect
-	golang.org/x/sys v0.10.0 // indirect
+	golang.org/x/sys v0.11.0 // indirect
 	golang.org/x/tools v0.6.0 // indirect
 )
 
@@ -23,9 +23,9 @@ require (
 	github.com/aymerick/douceur v0.2.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/gorilla/css v1.0.0 // indirect
-	github.com/microcosm-cc/bluemonday v1.0.24 // indirect
+	github.com/microcosm-cc/bluemonday v1.0.25 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/projectdiscovery/utils v0.0.43
+	github.com/projectdiscovery/utils v0.0.56
 	github.com/saintfish/chardet v0.0.0-20120816061221-3af4cd4741ca // indirect
-	golang.org/x/net v0.12.0 // indirect
+	golang.org/x/net v0.14.0 // indirect
 )
