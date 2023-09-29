@@ -5,12 +5,15 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path/filepath"
 	"reflect"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
 
+	fileutil "github.com/projectdiscovery/utils/file"
+	osutil "github.com/projectdiscovery/utils/os"
 	permissionutil "github.com/projectdiscovery/utils/permission"
 	"github.com/stretchr/testify/assert"
 
@@ -417,4 +420,70 @@ func TestCaseSensitiveFlagSet(t *testing.T) {
 func tearDown(uniqueValue string) {
 	flag.CommandLine = flag.NewFlagSet(uniqueValue, flag.ContinueOnError)
 	flag.CommandLine.Usage = flag.Usage
+}
+
+func TestConfigDirMigration(t *testing.T) {
+	// remove any args added by previous test
+	os.Args = []string{
+		os.Args[0],
+	}
+	// setup test old config dir
+	createEmptyFilesinDir(t, oldAppConfigDir)
+
+	flagset := NewFlagSet()
+	flagset.CommandLine = flag.NewFlagSet("goflags", flag.ContinueOnError)
+	newToolCfgDir := flagset.GetToolConfigDir()
+
+	// cleanup and debug
+	defer func() {
+		// cleanup
+		if t.Failed() {
+			t.Logf("old config dir: %s", oldAppConfigDir)
+			t.Logf("new config dir: %s", newToolCfgDir)
+			cfgFiles, _ := os.ReadDir(oldAppConfigDir)
+			for _, cfgFile := range cfgFiles {
+				t.Logf("found config file in old dir : %s", cfgFile.Name())
+			}
+			cfgFiles, _ = os.ReadDir(newToolCfgDir)
+			for _, cfgFile := range cfgFiles {
+				t.Logf("found config file in new dir : %s", cfgFile.Name())
+			}
+		}
+		_ = os.RemoveAll(oldAppConfigDir)
+		_ = os.RemoveAll(newToolCfgDir)
+	}()
+
+	// remove new config dir if it already exists from previous test
+	_ = os.RemoveAll(newToolCfgDir)
+
+	// create test flag and parse it
+	var testflag string
+	flagset.CreateGroup("Example", "Example",
+		flagset.StringVarP(&testflag, "test", "t", "", "test flag"),
+	)
+
+	if err := flagset.Parse(); err != nil {
+		require.Nil(t, err, "could not parse flags")
+	}
+
+	// oldAppConfigDir and newConfigDir is same in case of linux (unless sandbox or something else is used)
+	// migration will only happen on windows & macOS (darwin) Ref: https://pkg.go.dev/os#UserConfigDir
+	if oldAppConfigDir != newToolCfgDir || !osutil.IsLinux() {
+		// check if config files are moved to new config dir
+		require.FileExistsf(t, filepath.Join(newToolCfgDir, "config.yaml"), "config file not created in new config dir")
+		require.FileExistsf(t, filepath.Join(newToolCfgDir, "provider-config.yaml"), "config file not created in new config dir")
+	}
+
+	tearDown(t.Name())
+}
+
+func createEmptyFilesinDir(t *testing.T, dirname string) {
+	if !fileutil.FolderExists(dirname) {
+		_ = fileutil.CreateFolder(dirname)
+	}
+	// create empty yaml config files
+	err := os.WriteFile(filepath.Join(oldAppConfigDir, "config.yaml"), []byte{}, os.ModePerm)
+	require.Nil(t, err, "could not create old config file")
+	err = os.WriteFile(filepath.Join(oldAppConfigDir, "provider-config.yaml"), []byte{}, os.ModePerm)
+	require.Nil(t, err, "could not create old config file")
 }

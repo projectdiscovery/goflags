@@ -4,7 +4,11 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	folderutil "github.com/projectdiscovery/utils/folder"
 )
+
+var oldAppConfigDir = filepath.Join(folderutil.HomeDirOrDefault("."), ".config", getToolName())
 
 // GetConfigFilePath returns the config file path
 func (flagSet *FlagSet) GetConfigFilePath() (string, error) {
@@ -12,15 +16,13 @@ func (flagSet *FlagSet) GetConfigFilePath() (string, error) {
 	if flagSet.configFilePath != "" {
 		return flagSet.configFilePath, nil
 	}
-	// generate default config name
-	appName := filepath.Base(os.Args[0])
-	// trim extension from app name
-	appName = strings.TrimSuffix(appName, filepath.Ext(appName))
-	homePath, err := os.UserHomeDir()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(homePath, ".config", appName, "config.yaml"), nil
+	return filepath.Join(folderutil.AppConfigDirOrDefault(".", getToolName()), "config.yaml"), nil
+}
+
+// GetToolConfigDir returns the config dir path of the tool
+func (flagset *FlagSet) GetToolConfigDir() string {
+	cfgFilePath, _ := flagset.GetConfigFilePath()
+	return filepath.Dir(cfgFilePath)
 }
 
 // SetConfigFilePath sets custom config file path
@@ -28,16 +30,8 @@ func (flagSet *FlagSet) SetConfigFilePath(filePath string) {
 	flagSet.configFilePath = filePath
 }
 
-// Deprecated: Use FlagSet.GetConfigFilePath instead.
-// GetConfigFilePath returns the default config file path
-func GetConfigFilePath() (string, error) {
+// getToolName returns the name of the tool
+func getToolName() string {
 	appName := filepath.Base(os.Args[0])
-	// trim extension from app name
-	appName = strings.TrimSuffix(appName, filepath.Ext(appName))
-	homePath, err := os.UserHomeDir()
-	if err != nil {
-		return "", err
-	}
-
-	return filepath.Join(homePath, ".config", appName, "config.yaml"), nil
+	return strings.TrimSuffix(appName, filepath.Ext(appName))
 }
