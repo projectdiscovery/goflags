@@ -21,6 +21,10 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+var (
+	DisableAutoConfigMigration = false
+)
+
 // FlagSet is a list of flags for an application
 type FlagSet struct {
 	CaseSensitive  bool
@@ -110,7 +114,9 @@ func (flagSet *FlagSet) Parse() error {
 
 	// migrate data from old config dir to new one
 	// Ref: https://github.com/projectdiscovery/nuclei/issues/3576
-	flagSet.migrateConfigDir()
+	if !DisableAutoConfigMigration {
+		AttemptConfigMigration()
+	}
 
 	// if config file doesn't exist, create one
 	if !fileutil.FileExists(configFilePath) {
@@ -126,12 +132,17 @@ func (flagSet *FlagSet) Parse() error {
 	return nil
 }
 
-func (flagSet *FlagSet) migrateConfigDir() {
+// AttemptConfigMigration attempts to migrate config from old config dir to new one
+// migration condition
+// 1. old config dir exists
+// 2. new config dir doesn't exist
+// 3. old config dir is not same as new config dir
+func AttemptConfigMigration() {
 	// migration condition
 	// 1. old config dir exists
 	// 2. new config dir doesn't exist
 	// 3. old config dir is not same as new config dir
-
+	flagSet := FlagSet{} // dummy flagset
 	toolConfigDir := flagSet.GetToolConfigDir()
 	if toolConfigDir != oldAppConfigDir && fileutil.FolderExists(oldAppConfigDir) && !fileutil.FolderExists(toolConfigDir) {
 		_ = fileutil.CreateFolder(toolConfigDir)
