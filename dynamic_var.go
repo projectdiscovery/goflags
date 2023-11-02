@@ -16,19 +16,24 @@ type dynamicFlag struct {
 
 func (df *dynamicFlag) Set(value string) error {
 	fieldKind := reflect.TypeOf(df.field).Elem().Kind()
-	var isBoolValue bool
-	if _, err := strconv.ParseBool(value); err == nil {
-		isBoolValue = true
+	var (
+		optionWithoutValue bool
+		pv                 bool
+	)
+	if value == "t" || value == "T" || value == "true" || value == "TRUE" {
+		pv = true
+		optionWithoutValue = true
+	} else if value == "f" || value == "F" || value == "false" || value == "FALSE" {
+		pv = false
 	}
-	if fieldKind == reflect.Bool && isBoolValue {
-		boolField := df.field.(*bool)
-		*boolField = true
-		return nil
-	}
+
 	switch fieldKind {
+	case reflect.Bool:
+		boolField := df.field.(*bool)
+		*boolField = pv
 	case reflect.Int:
 		intField := df.field.(*int)
-		if isBoolValue {
+		if optionWithoutValue {
 			*intField = df.defaultValue.(int)
 			return nil
 		}
@@ -39,7 +44,7 @@ func (df *dynamicFlag) Set(value string) error {
 		*intField = newValue
 	case reflect.Float64:
 		floatField := df.field.(*float64)
-		if isBoolValue {
+		if optionWithoutValue {
 			*floatField = df.defaultValue.(float64)
 			return nil
 		}
@@ -50,14 +55,14 @@ func (df *dynamicFlag) Set(value string) error {
 		*floatField = newValue
 	case reflect.String:
 		stringField := df.field.(*string)
-		if isBoolValue {
+		if optionWithoutValue {
 			*stringField = df.defaultValue.(string)
 			return nil
 		}
 		*stringField = value
 	case reflect.Slice:
 		sliceField := df.field.(*[]string)
-		if isBoolValue {
+		if optionWithoutValue {
 			*sliceField = df.defaultValue.([]string)
 			return nil
 		}
