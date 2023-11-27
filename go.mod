@@ -25,7 +25,7 @@ require (
 	github.com/gorilla/css v1.0.0 // indirect
 	github.com/microcosm-cc/bluemonday v1.0.25 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/projectdiscovery/utils v0.0.64
+	github.com/projectdiscovery/utils v0.0.65
 	github.com/saintfish/chardet v0.0.0-20120816061221-3af4cd4741ca // indirect
 	golang.org/x/net v0.17.0 // indirect
 )
