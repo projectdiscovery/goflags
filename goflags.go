@@ -111,7 +111,6 @@ func (flagSet *FlagSet) Parse() error {
 	flagSet.CommandLine.Usage = flagSet.usageFunc
 	args := flagSet.reOrderArgs(os.Args[1:])
 	_ = flagSet.CommandLine.Parse(args)
-	fmt.Println("Remaining args", flagSet.CommandLine.Args())
 	configFilePath, _ := flagSet.GetConfigFilePath()
 
 	// migrate data from old config dir to new one
