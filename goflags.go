@@ -109,7 +109,9 @@ func (flagSet *FlagSet) MergeConfigFile(file string) error {
 func (flagSet *FlagSet) Parse() error {
 	flagSet.CommandLine.SetOutput(os.Stdout)
 	flagSet.CommandLine.Usage = flagSet.usageFunc
-	_ = flagSet.CommandLine.Parse(os.Args[1:])
+	args := flagSet.reOrderArgs(os.Args[1:])
+	_ = flagSet.CommandLine.Parse(args)
+	fmt.Println("Remaining args", flagSet.CommandLine.Args())
 	configFilePath, _ := flagSet.GetConfigFilePath()
 
 	// migrate data from old config dir to new one
@@ -130,6 +132,44 @@ func (flagSet *FlagSet) Parse() error {
 
 	_ = flagSet.MergeConfigFile(configFilePath) // try to read default config after parsing flags
 	return nil
+}
+
+// FIXME: This function is a workaround for the issue where Go's flag package
+// stops parsing after the first non-flag argument. This function rearranges the
+// arguments to ensure that all flags (including those after non-flag arguments)
+// are parsed correctly. Consider revising this approach for a more robust solution
+// in future iterations.
+// References:
+// https://github.com/golang/go/issues/3869
+// https://stackoverflow.com/questions/69384797/is-a-bug-flag-parse-could-not-get-values-after-bool-arg
+func (flagSet *FlagSet) reOrderArgs(args []string) []string {
+	var reorderedArgs []string
+	var nonFlagArgs []string
+
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
+
+		if !strings.HasPrefix(arg, "-") {
+			nonFlagArgs = append(nonFlagArgs, arg)
+			continue
+		}
+
+		reorderedArgs = append(reorderedArgs, arg)
+		if fl := flagSet.CommandLine.Lookup(strings.TrimPrefix(arg, "-")); fl != nil {
+			if _, isBoolFlag := fl.Value.(interface{ IsBoolFlag() bool }); isBoolFlag {
+				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+					nonFlagArgs = append(nonFlagArgs, args[i+1])
+					i++
+				}
+			} else if i+1 < len(args) {
+				reorderedArgs = append(reorderedArgs, args[i+1])
+				i++
+			}
+		}
+	}
+
+	reorderedArgs = append(reorderedArgs, nonFlagArgs...)
+	return reorderedArgs
 }
 
 // AttemptConfigMigration attempts to migrate config from old config dir to new one
