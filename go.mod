@@ -5,7 +5,7 @@ go 1.20
 require (
 	github.com/cnf/structhash v0.0.0-20201127153200-e1b16c1ebc08
 	github.com/pkg/errors v0.9.1
-	github.com/stretchr/testify v1.8.4
+	github.com/stretchr/testify v1.9.0
 	golang.org/x/exp v0.0.0-20221205204356-47842c84f3db
 	gopkg.in/yaml.v3 v3.0.1
 )
