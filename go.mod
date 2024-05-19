@@ -1,6 +1,6 @@
 module github.com/projectdiscovery/goflags
 
-go 1.20
+go 1.21
 
 require (
 	github.com/cnf/structhash v0.0.0-20201127153200-e1b16c1ebc08
@@ -11,6 +11,7 @@ require (
 )
 
 require (
+	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
 	github.com/mattn/go-isatty v0.0.19 // indirect
 	github.com/miekg/dns v1.1.56 // indirect
 	github.com/projectdiscovery/blackrock v0.0.1 // indirect
