@@ -4,6 +4,7 @@ go 1.21
 
 require (
 	github.com/cnf/structhash v0.0.0-20201127153200-e1b16c1ebc08
+	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.9.0
 	golang.org/x/exp v0.0.0-20221205204356-47842c84f3db
@@ -11,7 +12,6 @@ require (
 )
 
 require (
-	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
 	github.com/mattn/go-isatty v0.0.19 // indirect
 	github.com/miekg/dns v1.1.56 // indirect
 	github.com/projectdiscovery/blackrock v0.0.1 // indirect

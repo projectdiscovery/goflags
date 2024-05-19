@@ -24,8 +24,6 @@ github.com/projectdiscovery/blackrock v0.0.1 h1:lHQqhaaEFjgf5WkuItbpeCZv2DUIE45k
 github.com/projectdiscovery/blackrock v0.0.1/go.mod h1:ANUtjDfaVrqB453bzToU+YB4cUbvBRpLvEwoWIwlTss=
 github.com/projectdiscovery/utils v0.0.93-0.20240519190012-c4bf7513228c h1:6avWNsKxtJ9gWVg0SuHHjfGJU4I/ra0jtcJ3651U7fI=
 github.com/projectdiscovery/utils v0.0.93-0.20240519190012-c4bf7513228c/go.mod h1:2+mWzk5FeYdK9imo5eLk6oVeih0G0wsTff1pzBAh9tk=
-github.com/projectdiscovery/utils v0.0.93 h1:IMZFsmQFYZUf7rxpBoZj+53FsNDC/vHsXA+4B4GuGeg=
-github.com/projectdiscovery/utils v0.0.93/go.mod h1:2+mWzk5FeYdK9imo5eLk6oVeih0G0wsTff1pzBAh9tk=
 github.com/saintfish/chardet v0.0.0-20230101081208-5e3ef4b5456d h1:hrujxIzL1woJ7AwssoOcM/tq5JjjG2yYOc8odClEiXA=
 github.com/saintfish/chardet v0.0.0-20230101081208-5e3ef4b5456d/go.mod h1:uugorj2VCxiV1x+LzaIdVa9b4S4qGAcH6cbhh4qVxOU=
 github.com/stretchr/testify v1.9.0 h1:HtqpIVDClZ4nwg75+f6Lvsy/wHu+3BoSGCbBAcpTsTg=
