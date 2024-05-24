@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/cnf/structhash"
+	"github.com/google/shlex"
 	fileutil "github.com/projectdiscovery/utils/file"
 	folderutil "github.com/projectdiscovery/utils/folder"
 	permissionutil "github.com/projectdiscovery/utils/permission"
@@ -106,10 +107,14 @@ func (flagSet *FlagSet) MergeConfigFile(file string) error {
 }
 
 // Parse parses the flags provided to the library.
-func (flagSet *FlagSet) Parse() error {
+func (flagSet *FlagSet) Parse(args ...string) error {
 	flagSet.CommandLine.SetOutput(os.Stdout)
 	flagSet.CommandLine.Usage = flagSet.usageFunc
-	_ = flagSet.CommandLine.Parse(os.Args[1:])
+	toParse := os.Args[1:]
+	if len(args) > 0 {
+		toParse = args
+	}
+	_ = flagSet.CommandLine.Parse(toParse)
 	configFilePath, _ := flagSet.GetConfigFilePath()
 
 	// migrate data from old config dir to new one
@@ -811,4 +816,11 @@ func isZeroValue(f *flag.Flag, value string) bool {
 // normalizeGroupDescription returns normalized description field for group
 func normalizeGroupDescription(description string) string {
 	return strings.ToUpper(description)
+}
+
+// GetArgsFromString allows splitting a string into arguments
+// following the same rules as the shell.
+func GetArgsFromString(str string) []string {
+	args, _ := shlex.Split(str)
+	return args
 }

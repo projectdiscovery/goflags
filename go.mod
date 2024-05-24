@@ -1,9 +1,10 @@
 module github.com/projectdiscovery/goflags
 
-go 1.20
+go 1.21
 
 require (
 	github.com/cnf/structhash v0.0.0-20201127153200-e1b16c1ebc08
+	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.9.0
 	golang.org/x/exp v0.0.0-20221205204356-47842c84f3db
@@ -29,7 +30,7 @@ require (
 	github.com/gorilla/css v1.0.0 // indirect
 	github.com/microcosm-cc/bluemonday v1.0.25 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/projectdiscovery/utils v0.0.94
+	github.com/projectdiscovery/utils v0.1.0
 	github.com/saintfish/chardet v0.0.0-20230101081208-5e3ef4b5456d // indirect
 	golang.org/x/net v0.23.0 // indirect
 )
