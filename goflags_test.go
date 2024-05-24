@@ -417,6 +417,64 @@ func TestCaseSensitiveFlagSet(t *testing.T) {
 	assert.Equal(t, expected, actual)
 }
 
+func TestReArrangeArgs(t *testing.T) {
+	fs := NewFlagSet()
+	fs.CommandLine = flag.NewFlagSet("test", flag.ContinueOnError)
+	var boolVar bool
+	var stringVar string
+	fs.BoolVar(&boolVar, "bool", false, "a bool flag")
+	fs.StringVar(&stringVar, "string", "default", "a string flag")
+
+	// Define test cases
+	tests := []struct {
+		name     string
+		args     []string
+		expected []string
+	}{
+		{
+			name:     "No flags",
+			args:     []string{"arg1", "arg2"},
+			expected: []string{"arg1", "arg2"},
+		},
+		{
+			name:     "Boolean flag",
+			args:     []string{"-bool", "arg1"},
+			expected: []string{"-bool", "arg1"},
+		},
+		{
+			name:     "String flag",
+			args:     []string{"-string", "value", "arg1"},
+			expected: []string{"-string", "value", "arg1"},
+		},
+		{
+			name:     "Mixed flags and args",
+			args:     []string{"-bool", "arg1", "-string", "value", "arg2"},
+			expected: []string{"-bool", "-string", "value", "arg1", "arg2"},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			result := fs.reOrderArgs(tc.args)
+			if !equalSlices(result, tc.expected) {
+				t.Errorf("Test %s failed: expected %v, got %v", tc.name, tc.expected, result)
+			}
+		})
+	}
+}
+
+func equalSlices(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
 func tearDown(uniqueValue string) {
 	flag.CommandLine = flag.NewFlagSet(uniqueValue, flag.ContinueOnError)
 	flag.CommandLine.Usage = flag.Usage
