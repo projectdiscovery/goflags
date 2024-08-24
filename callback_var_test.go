@@ -57,7 +57,7 @@ func TestFailCallback(t *testing.T) {
 	tearDown(t.Name())
 }
 
-func updateCallbackFunc(toolName string, cliOutput io.Writer) func() {
+func updateCallbackFunc(_ string, cliOutput io.Writer) func() {
 	return func() {
 		fmt.Fprintf(cliOutput, "updated successfully!")
 	}
