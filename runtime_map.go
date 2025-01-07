@@ -60,7 +60,7 @@ func (runtimeMap *RuntimeMap) Del(key string) error {
 
 // IsEmpty specifies if the underlying map is empty
 func (runtimeMap *RuntimeMap) IsEmpty() bool {
-	return runtimeMap.kv == nil || len(runtimeMap.kv) == 0
+	return len(runtimeMap.kv) == 0
 }
 
 // AsMap returns the internal map as reference - changes are allowed
