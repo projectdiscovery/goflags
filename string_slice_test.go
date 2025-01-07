@@ -86,7 +86,7 @@ func TestFileNormalizedStringSliceOptions(t *testing.T) {
 
 func TestFileStringSliceOptions(t *testing.T) {
 	filename := "test.txt"
-	_ = os.WriteFile(filename, []byte("value1,value2\nvalue3"), 0644)
+	_ = os.WriteFile(filename, []byte("# this is a comment\nvalue1,value2\nvalue3"), 0644)
 	defer os.RemoveAll(filename)
 
 	result, err := ToStringSlice(filename, FileStringSliceOptions)
