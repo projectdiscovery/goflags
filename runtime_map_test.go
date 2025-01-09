@@ -22,6 +22,7 @@ func TestRuntimeMap(t *testing.T) {
 		sb.WriteString("variable2=value2\n")
 		tempFile, err := os.CreateTemp(t.TempDir(), "test")
 		require.NoError(t, err, "could not create temp file")
+		defer tempFile.Close()
 		_, err = tempFile.WriteString(sb.String())
 		require.NoError(t, err, "could not write to temp file")
 		data2 := &RuntimeMap{}
