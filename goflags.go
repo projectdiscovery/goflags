@@ -697,7 +697,7 @@ func (flagSet *FlagSet) displayGroupUsageFunc(uniqueDeduper *uniqueDeduper, grou
 }
 
 // displaySingleFlagUsageFunc displays usage for a single flag
-func (flagSet *FlagSet) displaySingleFlagUsageFunc(name string, data *FlagData, cliOutput io.Writer, writer *tabwriter.Writer) {
+func (flagSet *FlagSet) displaySingleFlagUsageFunc(name string, data *FlagData, _ io.Writer, writer *tabwriter.Writer) {
 	if currentFlag := flagSet.CommandLine.Lookup(name); currentFlag != nil {
 		result := createUsageString(data, currentFlag)
 		fmt.Fprint(writer, result, "\n")
