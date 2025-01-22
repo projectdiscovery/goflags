@@ -223,7 +223,7 @@ func (flagSet *FlagSet) CreateGroup(groupName, description string, flags ...*Fla
 //
 // Command line flags however always take precedence over config file ones.
 func (flagSet *FlagSet) readConfigFile(filePath string) error {
-	if empty, err := fileutil.IsEmpty(filePath); err == nil || empty {
+	if empty, err := fileutil.IsEmpty(filePath); err == nil && empty {
 		return nil
 	}
 
