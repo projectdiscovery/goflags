@@ -1,6 +1,7 @@
 module github.com/projectdiscovery/goflags
 
 go 1.21
+toolchain go1.24.1
 
 require (
 	github.com/cnf/structhash v0.0.0-20201127153200-e1b16c1ebc08
@@ -20,7 +21,7 @@ require (
 	github.com/tidwall/pretty v1.2.0 // indirect
 	golang.org/x/mod v0.17.0 // indirect
 	golang.org/x/sync v0.10.0 // indirect
-	golang.org/x/sys v0.28.0 // indirect
+	golang.org/x/sys v0.31.0 // indirect
 	golang.org/x/tools v0.21.1-0.20240508182429-e35e4ccd0d2d // indirect
 )
 
@@ -33,5 +34,5 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/projectdiscovery/utils v0.4.12
 	github.com/saintfish/chardet v0.0.0-20230101081208-5e3ef4b5456d // indirect
-	golang.org/x/net v0.33.0 // indirect
+	golang.org/x/net v0.38.0 // indirect
 )
