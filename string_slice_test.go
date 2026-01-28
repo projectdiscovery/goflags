@@ -108,3 +108,39 @@ func TestFileNormalizedOriginalStringSliceOptions(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, []string{"Test User"}, result, "could not get correct path")
 }
+
+func TestEscapedComma(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		options  Options
+		expected []string
+	}{
+		{
+			name:     "escaped comma preserves value",
+			input:    `--window-size=1280\,800`,
+			options:  CommaSeparatedStringSliceOptions,
+			expected: []string{"--window-size=1280,800"},
+		},
+		{
+			name:     "mixed escaped and regular commas",
+			input:    `a\,b,c\,d`,
+			options:  CommaSeparatedStringSliceOptions,
+			expected: []string{"a,b", "c,d"},
+		},
+		{
+			name:     "backslash without comma preserved",
+			input:    `path\to\file,other`,
+			options:  CommaSeparatedStringSliceOptions,
+			expected: []string{`path\to\file`, "other"},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			result, err := ToStringSlice(tc.input, tc.options)
+			assert.Nil(t, err)
+			assert.Equal(t, tc.expected, result)
+		})
+	}
+}
