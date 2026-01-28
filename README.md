@@ -44,6 +44,8 @@ The following types are supported by the goflags library. The `<name>P` suffix m
 | VarP                     | Custom value with long short name implementing flag.Value interface |
 | EnumVar                  | Enum value with long name                                           |
 | EnumVarP                 | Enum value with long short name                                     |
+| AuthVar                  | Auth token with long name (supports interactive prompt and env var) |
+| AuthVarP                 | Auth token with long short name                                     |
 | CallbackVar			   | Callback function as value with long name							 |
 | CallbackVarP			   | Callback function as value with long short name					 |
 | SizeVar                  | String value with long name                                         |

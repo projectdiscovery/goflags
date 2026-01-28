@@ -71,7 +71,6 @@ func (flagSet *FlagSet) AuthVarP(field *string, long, short, envKey, usage strin
 		panic(fmt.Errorf("field cannot be nil for flag -%v", long))
 	}
 
-	// Load from environment if available
 	if envKey != "" {
 		if envValue := os.Getenv(envKey); envValue != "" {
 			*field = envValue
