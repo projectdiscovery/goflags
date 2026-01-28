@@ -5,6 +5,14 @@ import (
 	"time"
 )
 
+// signalSelf sends interrupt signal to current process.
+// Can be overridden for testing.
+var signalSelf = func() {
+	if p, err := os.FindProcess(os.Getpid()); err == nil {
+		_ = p.Signal(os.Interrupt)
+	}
+}
+
 // CommonFlags contains common flags shared across ProjectDiscovery tools.
 // These flags provide consistent behavior across all tools in the ecosystem.
 type CommonFlags struct {
@@ -46,9 +54,7 @@ func (cf *CommonFlags) startMaxTimeHandler() {
 	if cf.MaxTime > 0 {
 		go func() {
 			<-time.After(cf.MaxTime)
-			if p, err := os.FindProcess(os.Getpid()); err == nil {
-				_ = p.Signal(os.Interrupt)
-			}
+			signalSelf()
 		}()
 	}
 }
