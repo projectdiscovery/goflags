@@ -3,6 +3,7 @@ package goflags
 import (
 	"os"
 	"os/signal"
+	"runtime"
 	"testing"
 	"time"
 )
@@ -46,6 +47,10 @@ func TestAddCommonFlagsShortFlag(t *testing.T) {
 }
 
 func TestMaxTimeInterrupt(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("skipping on Windows: GenerateConsoleCtrlEvent sends to all console processes including test runner")
+	}
+
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt)
 	defer signal.Stop(sigChan)
