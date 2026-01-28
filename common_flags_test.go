@@ -1,6 +1,8 @@
 package goflags
 
 import (
+	"os"
+	"os/signal"
 	"testing"
 	"time"
 )
@@ -43,21 +45,19 @@ func TestAddCommonFlagsShortFlag(t *testing.T) {
 	}
 }
 
-func TestMaxTimeGracefulShutdown(t *testing.T) {
-	called := make(chan struct{})
-	originalSignalSelf := signalSelf
-	signalSelf = func() {
-		close(called)
-	}
-	defer func() { signalSelf = originalSignalSelf }()
+func TestMaxTimeInterrupt(t *testing.T) {
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt)
+	defer signal.Stop(sigChan)
 
 	flagSet := NewFlagSet()
 	flagSet.AddCommonFlags()
 	_ = flagSet.Parse("-mt", "100ms")
 
 	select {
-	case <-called:
+	case <-sigChan:
+		// Success - received interrupt
 	case <-time.After(500 * time.Millisecond):
-		t.Error("Expected signalSelf to be called within 500ms")
+		t.Error("Expected interrupt signal within 500ms")
 	}
 }

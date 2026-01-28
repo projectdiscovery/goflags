@@ -1,24 +1,12 @@
 package goflags
 
-import (
-	"os"
-	"time"
-)
-
-// signalSelf sends interrupt signal to current process.
-// Can be overridden for testing.
-var signalSelf = func() {
-	if p, err := os.FindProcess(os.Getpid()); err == nil {
-		_ = p.Signal(os.Interrupt)
-	}
-}
+import "time"
 
 // CommonFlags contains common flags shared across ProjectDiscovery tools.
 // These flags provide consistent behavior across all tools in the ecosystem.
 type CommonFlags struct {
 	// MaxTime is the maximum duration for the entire execution.
-	// When this duration is reached, SIGINT is sent to gracefully terminate the process.
-	// Tools should handle this signal via their existing graceful shutdown handlers.
+	// When this duration is reached, an interrupt signal is sent to trigger graceful termination.
 	// Example values: "1h", "30m", "1h30m", "2h45m30s"
 	MaxTime time.Duration
 }
@@ -54,7 +42,7 @@ func (cf *CommonFlags) startMaxTimeHandler() {
 	if cf.MaxTime > 0 {
 		go func() {
 			<-time.After(cf.MaxTime)
-			signalSelf()
+			sendInterrupt()
 		}()
 	}
 }
