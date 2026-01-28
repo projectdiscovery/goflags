@@ -2,7 +2,10 @@
 
 package goflags
 
-import "syscall"
+import (
+	"os"
+	"syscall"
+)
 
 var (
 	kernel32                     = syscall.NewLazyDLL("kernel32.dll")
@@ -10,7 +13,9 @@ var (
 )
 
 func sendInterrupt() {
-	// CTRL_BREAK_EVENT = 1, sends to all processes in the console group
-	// Using 0 as process group ID sends to all processes attached to the console
-	procGenerateConsoleCtrlEvent.Call(1, 0)
+	// Send CTRL_BREAK_EVENT to current process's process group
+	// Using os.Getpid() targets only processes in our group (typically just us in production)
+	// This avoids sending to all console processes (group 0) which would kill parent processes
+	pid := os.Getpid()
+	procGenerateConsoleCtrlEvent.Call(syscall.CTRL_BREAK_EVENT, uintptr(pid))
 }
