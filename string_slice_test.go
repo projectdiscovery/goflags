@@ -134,6 +134,12 @@ func TestEscapedComma(t *testing.T) {
 			options:  CommaSeparatedStringSliceOptions,
 			expected: []string{`path\to\file`, "other"},
 		},
+		{
+			name:     "multiple options with escaped comma",
+			input:    `--window-size=1280\,800,--headless,--disable-gpu`,
+			options:  CommaSeparatedStringSliceOptions,
+			expected: []string{"--window-size=1280,800", "--headless", "--disable-gpu"},
+		},
 	}
 
 	for _, tc := range tests {
