@@ -1,6 +1,10 @@
 package goflags
 
-import "time"
+import (
+	"time"
+
+	"github.com/projectdiscovery/utils/process"
+)
 
 // CommonFlags contains common flags shared across ProjectDiscovery tools.
 // These flags provide consistent behavior across all tools in the ecosystem.
@@ -42,7 +46,7 @@ func (cf *CommonFlags) startMaxTimeHandler() {
 	if cf.MaxTime > 0 {
 		go func() {
 			<-time.After(cf.MaxTime)
-			sendInterrupt()
+			process.SendInterrupt()
 		}()
 	}
 }
