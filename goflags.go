@@ -41,6 +41,9 @@ type FlagSet struct {
 	// OtherOptionsGroupName is the name for all flags not in a group
 	OtherOptionsGroupName string
 	configOnlyKeys        InsertionOrderedMap
+
+	// commonFlags holds reference to CommonFlags if AddCommonFlags was called
+	commonFlags *CommonFlags
 }
 
 type groupData struct {
@@ -135,6 +138,10 @@ func (flagSet *FlagSet) Parse(args ...string) error {
 	}
 
 	_ = flagSet.MergeConfigFile(configFilePath) // try to read default config after parsing flags
+
+	// Start common flags handlers if AddCommonFlags was called
+	flagSet.startCommonFlagsHandlers()
+
 	return nil
 }
 
