@@ -13,6 +13,7 @@ type Options struct {
 	Email    goflags.StringSlice
 	Phone    string
 	Address  goflags.StringSlice
+	auth     string
 	fileSize goflags.Size
 	duration time.Duration
 	rls      goflags.RateLimitMap
@@ -39,6 +40,7 @@ func main() {
 	flagSet.CreateGroup("additional", "Additional",
 		flagSet.StringVarP(&testOptions.Phone, "phone", "ph", "", "phone of the user"),
 		flagSet.StringSliceVarP(&testOptions.Address, "address", "add", nil, "address of the user", goflags.StringSliceOptions),
+		flagSet.AuthVarP(&testOptions.auth, "auth", "a", "MY_AUTH_TOKEN", "authentication token (use -auth to prompt, or set MY_AUTH_TOKEN)"),
 		flagSet.CallbackVarP(CheckUpdate, "update", "ut", "update this tool to latest version"),
 		flagSet.SizeVarP(&testOptions.fileSize, "max-size", "ms", "", "max file size"),
 		flagSet.DurationVar(&testOptions.duration, "timeout", time.Hour, "timeout"),
@@ -55,9 +57,12 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// ratelimits value is
 	if len(testOptions.rls.AsMap()) > 0 {
 		fmt.Printf("Got RateLimits: %+v\n", testOptions.rls)
+	}
+
+	if testOptions.auth != "" {
+		fmt.Println("Auth:", testOptions.auth)
 	}
 
 	if len(testOptions.severity) > 0 {
