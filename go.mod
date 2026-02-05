@@ -1,4 +1,4 @@
-module github.com/projectdiscovery/goflags
+module github.com/NandanKopplu/goflags
 
 go 1.24.0
 

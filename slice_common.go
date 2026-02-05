@@ -72,12 +72,21 @@ func ToStringSlice(value string, options Options) ([]string, error) {
 			result = append(result, part)
 		}
 	}
-	if fileutil.FileExists(value) && options.IsFromFile != nil && options.IsFromFile(value) {
+	isInlineContent := strings.Contains(value, "\n")
+	
+	if !isInlineContent && fileutil.FileExists(value) && options.IsFromFile != nil && options.IsFromFile(value) {
+		// Read from file
 		linesChan, err := fileutil.ReadFile(value)
 		if err != nil {
 			return nil, err
 		}
 		for line := range linesChan {
+			addPartToResult(line)
+		}
+	} else if isInlineContent && options.IsFromFile != nil && options.IsFromFile(value) {
+		// Process inline content (multiline string)
+		lines := strings.Split(value, "\n")
+		for _, line := range lines {
 			addPartToResult(line)
 		}
 	} else if options.IsRaw != nil && options.IsRaw(value) {
