@@ -19,16 +19,23 @@ func isQuote(char rune) (bool, rune) {
 	return false, 0
 }
 
-func searchPart(value string, stop rune) (bool, string) {
-	var result string
-	for _, char := range value {
-		if char != stop {
-			result += string(char)
-		} else {
-			return true, result
+func searchPart(value string, stop rune) (bool, string, int) {
+	var result strings.Builder
+	runes := []rune(value)
+	i := 0
+	for i < len(runes) {
+		if runes[i] == '\\' && i+1 < len(runes) && runes[i+1] == stop {
+			result.WriteRune(stop)
+			i += 2
+			continue
 		}
+		if runes[i] == stop {
+			return true, result.String(), i
+		}
+		result.WriteRune(runes[i])
+		i++
 	}
-	return false, result
+	return false, result.String(), i
 }
 
 func ToString(slice []string) string {
@@ -87,22 +94,22 @@ func ToStringSlice(value string, options Options) ([]string, error) {
 		for index < len(value) {
 			char := rune(value[index])
 			if isQuote, quote := isQuote(char); isQuote {
-				quoteFound, part := searchPart(value[index+1:], quote)
+				quoteFound, part, consumed := searchPart(value[index+1:], quote)
 
 				if !quoteFound {
 					return nil, errors.New("Unclosed quote in path")
 				}
 
-				index += len(part) + 2
+				index += consumed + 2
 
 				addPartToResult(part)
 			} else {
-				commaFound, part := searchPart(value[index:], ',')
+				commaFound, part, consumed := searchPart(value[index:], ',')
 
 				if commaFound {
-					index += len(part) + 1
+					index += consumed + 1
 				} else {
-					index += len(part)
+					index += consumed
 				}
 
 				addPartToResult(part)
