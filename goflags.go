@@ -419,6 +419,29 @@ func (flagSet *FlagSet) IntVar(field *int, long string, defaultValue int, usage 
 	return flagSet.IntVarP(field, long, "", defaultValue, usage)
 }
 
+// Int64VarP adds a int64 flag with a shortname and longname
+func (flagSet *FlagSet) Int64VarP(field *int64, long, short string, defaultValue int64, usage string) *FlagData {
+	flagData := &FlagData{
+		usage:        usage,
+		short:        short,
+		long:         long,
+		defaultValue: strconv.FormatInt(defaultValue, 10),
+	}
+	if short != "" {
+		flagData.short = short
+		flagSet.CommandLine.Int64Var(field, short, defaultValue, usage)
+		flagSet.flagKeys.Set(short, flagData)
+	}
+	flagSet.CommandLine.Int64Var(field, long, defaultValue, usage)
+	flagSet.flagKeys.Set(long, flagData)
+	return flagData
+}
+
+// Int64Var adds a int64 flag with a longname
+func (flagSet *FlagSet) Int64Var(field *int64, long string, defaultValue int64, usage string) *FlagData {
+	return flagSet.Int64VarP(field, long, "", defaultValue, usage)
+}
+
 // StringSliceVarP adds a string slice flag with a shortname and longname
 // Use options to customize the behavior
 func (flagSet *FlagSet) StringSliceVarP(field *StringSlice, long, short string, defaultValue StringSlice, usage string, options Options) *FlagData {
