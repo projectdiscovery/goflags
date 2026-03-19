@@ -49,12 +49,14 @@ func TestConfigFileDataTypes(t *testing.T) {
 	var data3 int
 	var data4 bool
 	var data5 time.Duration
+	var data6 int64
 
 	flagSet.StringVar(&data, "string-value", "", "Default value for a test flag example")
 	flagSet.StringSliceVar(&data2, "slice-value", []string{}, "String slice flag example value", StringSliceOptions)
 	flagSet.IntVar(&data3, "int-value", 0, "Int value example")
 	flagSet.BoolVar(&data4, "bool-value", false, "Bool value example")
 	flagSet.DurationVar(&data5, "duration-value", time.Hour, "Bool value example")
+	flagSet.Int64Var(&data6, "int64-value", 0, "Int64 value example")
 
 	configFileData := `
 string-value: test
@@ -66,7 +68,8 @@ severity:
  - high
 int-value: 543
 bool-value: true
-duration-value: 1h`
+duration-value: 1h
+int64-value: 9876543210`
 	err := os.WriteFile("test.yaml", []byte(configFileData), permissionutil.ConfigFilePermission)
 	require.Nil(t, err, "could not write temporary config")
 	defer os.Remove("test.yaml")
@@ -79,8 +82,47 @@ duration-value: 1h`
 	require.Equal(t, 543, data3, "could not get correct int")
 	require.Equal(t, true, data4, "could not get correct bool")
 	require.Equal(t, time.Hour, data5, "could not get correct duration")
+	require.Equal(t, int64(9876543210), data6, "could not get correct int64")
 
 	tearDown(t.Name())
+}
+
+func TestParseInt64(t *testing.T) {
+	t.Run("long flag", func(t *testing.T) {
+		flagSet := NewFlagSet()
+		var val int64
+		flagSet.Int64Var(&val, "count", 0, "a count value")
+
+		os.Args = []string{os.Args[0], "-count", "9876543210"}
+		err := flagSet.Parse()
+		require.Nil(t, err)
+		require.Equal(t, int64(9876543210), val)
+		tearDown(t.Name())
+	})
+
+	t.Run("short flag", func(t *testing.T) {
+		flagSet := NewFlagSet()
+		var val int64
+		flagSet.Int64VarP(&val, "count", "c", 0, "a count value")
+
+		os.Args = []string{os.Args[0], "-c", "9876543210"}
+		err := flagSet.Parse()
+		require.Nil(t, err)
+		require.Equal(t, int64(9876543210), val)
+		tearDown(t.Name())
+	})
+
+	t.Run("default value", func(t *testing.T) {
+		flagSet := NewFlagSet()
+		var val int64
+		flagSet.Int64Var(&val, "count", 42, "a count value")
+
+		os.Args = []string{os.Args[0]}
+		err := flagSet.Parse()
+		require.Nil(t, err)
+		require.Equal(t, int64(42), val)
+		tearDown(t.Name())
+	})
 }
 
 func TestUsageOrder(t *testing.T) {
@@ -90,6 +132,7 @@ func TestUsageOrder(t *testing.T) {
 	var stringSliceData StringSlice
 	var stringSliceData2 StringSlice
 	var intData int
+	var int64Data int64
 	var boolData bool
 	var enumData string
 	var enumSliceData []string
@@ -111,6 +154,12 @@ func TestUsageOrder(t *testing.T) {
 	flagSet.IntVarP(&intData, "int-value2", "iv", 0, "Int value example #2").Group("Integer")
 	flagSet.IntVar(&intData, "int-with-default-value", 12, "Int with default value example").Group("Integer")
 	flagSet.IntVarP(&intData, "int-with-default-value2", "iwdv", 12, "Int with default value example #2").Group("Integer")
+
+	flagSet.SetGroup("Int64", "Int64")
+	flagSet.Int64Var(&int64Data, "int64-value", 0, "Int64 value example").Group("Int64")
+	flagSet.Int64VarP(&int64Data, "int64-value2", "i64", 0, "Int64 value example #2").Group("Int64")
+	flagSet.Int64Var(&int64Data, "int64-with-default-value", 9876543210, "Int64 with default value example").Group("Int64")
+	flagSet.Int64VarP(&int64Data, "int64-with-default-value2", "i64dv", 9876543210, "Int64 with default value example #2").Group("Int64")
 
 	flagSet.SetGroup("Bool", "Boolean")
 	flagSet.BoolVar(&boolData, "bool-value", false, "Bool value example").Group("Bool")
@@ -165,6 +214,11 @@ INTEGER:
    -iv, -int-value2 int                 Int value example #2
    -int-with-default-value int          Int with default value example (default 12)
    -iwdv, -int-with-default-value2 int  Int with default value example #2 (default 12)
+INT64:
+   -int64-value int                        Int64 value example
+   -i64, -int64-value2 int                 Int64 value example #2
+   -int64-with-default-value int           Int64 with default value example (default 9876543210)
+   -i64dv, -int64-with-default-value2 int  Int64 with default value example #2 (default 9876543210)
 BOOLEAN:
    -bool-value                       Bool value example
    -bv, -bool-value2                 Bool value example #2

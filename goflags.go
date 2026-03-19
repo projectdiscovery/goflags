@@ -259,9 +259,11 @@ func (flagSet *FlagSet) readConfigFile(filePath string) error {
 				_ = fl.Value.Set(itemValue)
 			case bool:
 				_ = fl.Value.Set(strconv.FormatBool(itemValue))
-			case int:
-				_ = fl.Value.Set(strconv.Itoa(itemValue))
-			case time.Duration:
+		case int:
+			_ = fl.Value.Set(strconv.Itoa(itemValue))
+		case int64:
+			_ = fl.Value.Set(strconv.FormatInt(itemValue, 10))
+		case time.Duration:
 				_ = fl.Value.Set(itemValue.String())
 			case []interface{}:
 				for _, v := range itemValue {
@@ -288,9 +290,11 @@ func (flagSet *FlagSet) readConfigFile(filePath string) error {
 				_ = fl.Value.Set(data)
 			case bool:
 				_ = fl.Value.Set(strconv.FormatBool(data))
-			case int:
-				_ = fl.Value.Set(strconv.Itoa(data))
-			case []interface{}:
+		case int:
+			_ = fl.Value.Set(strconv.Itoa(data))
+		case int64:
+			_ = fl.Value.Set(strconv.FormatInt(data, 10))
+		case []interface{}:
 				for _, v := range data {
 					vStr, ok := v.(string)
 					if ok {
@@ -417,6 +421,29 @@ func (flagSet *FlagSet) IntVarP(field *int, long, short string, defaultValue int
 // IntVar adds a int flag with a longname
 func (flagSet *FlagSet) IntVar(field *int, long string, defaultValue int, usage string) *FlagData {
 	return flagSet.IntVarP(field, long, "", defaultValue, usage)
+}
+
+// Int64VarP adds an int64 flag with a shortname and longname
+func (flagSet *FlagSet) Int64VarP(field *int64, long, short string, defaultValue int64, usage string) *FlagData {
+	flagData := &FlagData{
+		usage:        usage,
+		short:        short,
+		long:         long,
+		defaultValue: strconv.FormatInt(defaultValue, 10),
+	}
+	if short != "" {
+		flagData.short = short
+		flagSet.CommandLine.Int64Var(field, short, defaultValue, usage)
+		flagSet.flagKeys.Set(short, flagData)
+	}
+	flagSet.CommandLine.Int64Var(field, long, defaultValue, usage)
+	flagSet.flagKeys.Set(long, flagData)
+	return flagData
+}
+
+// Int64Var adds an int64 flag with a longname
+func (flagSet *FlagSet) Int64Var(field *int64, long string, defaultValue int64, usage string) *FlagData {
+	return flagSet.Int64VarP(field, long, "", defaultValue, usage)
 }
 
 // StringSliceVarP adds a string slice flag with a shortname and longname
