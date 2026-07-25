@@ -1,6 +1,6 @@
 module github.com/projectdiscovery/goflags
 
-go 1.24.0
+go 1.25.0
 
 require (
 	github.com/cnf/structhash v0.0.0-20250313080605-df4c6cc74a9a
@@ -8,7 +8,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.11.1
 	golang.org/x/exp v0.0.0-20260112195511-716be5621a96
-	golang.org/x/term v0.39.0
+	golang.org/x/term v0.43.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -29,7 +29,7 @@ require (
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	golang.org/x/mod v0.32.0 // indirect
 	golang.org/x/sync v0.19.0 // indirect
-	golang.org/x/sys v0.40.0 // indirect
+	golang.org/x/sys v0.45.0 // indirect
 	golang.org/x/tools v0.41.0 // indirect
 )
 
@@ -42,5 +42,5 @@ require (
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/projectdiscovery/utils v0.9.1-0.20260204132542-2eee3afb1f86
 	github.com/saintfish/chardet v0.0.0-20230101081208-5e3ef4b5456d // indirect
-	golang.org/x/net v0.49.0 // indirect
+	golang.org/x/net v0.55.0 // indirect
 )
