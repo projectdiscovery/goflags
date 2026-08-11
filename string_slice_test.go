@@ -150,3 +150,45 @@ func TestEscapedComma(t *testing.T) {
 		})
 	}
 }
+
+func TestUnicodeStringSlice(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected []string
+	}{
+		{
+			name:     "single non-ASCII value",
+			input:    `C:\templates\nuclei-template-反射xss漏洞.yaml`,
+			expected: []string{`C:\templates\nuclei-template-反射xss漏洞.yaml`},
+		},
+		{
+			name:     "comma-separated non-ASCII values",
+			input:    `模板.yaml,漏洞.yaml`,
+			expected: []string{`模板.yaml`, `漏洞.yaml`},
+		},
+		{
+			name:     "quoted commas with non-ASCII text",
+			input:    `"模板,反射.yaml","漏洞,存储.yaml"`,
+			expected: []string{`模板,反射.yaml`, `漏洞,存储.yaml`},
+		},
+		{
+			name:     "escaped commas with non-ASCII text",
+			input:    `模板\,反射.yaml,漏洞\,存储.yaml`,
+			expected: []string{`模板,反射.yaml`, `漏洞,存储.yaml`},
+		},
+		{
+			name:     "literal percent characters",
+			input:    `模板-%s-100%.yaml`,
+			expected: []string{`模板-%s-100%.yaml`},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			result, err := ToStringSlice(tc.input, CommaSeparatedStringSliceOptions)
+			assert.NoError(t, err)
+			assert.Equal(t, tc.expected, result)
+		})
+	}
+}

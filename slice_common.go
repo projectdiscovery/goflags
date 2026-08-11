@@ -8,9 +8,9 @@ import (
 	stringsutil "github.com/projectdiscovery/utils/strings"
 )
 
-var quotes = []rune{'"', '\'', '`'}
+var quotes = []byte{'"', '\'', '`'}
 
-func isQuote(char rune) (bool, rune) {
+func isQuote(char byte) (bool, byte) {
 	for _, quote := range quotes {
 		if quote == char {
 			return true, quote
@@ -19,20 +19,19 @@ func isQuote(char rune) (bool, rune) {
 	return false, 0
 }
 
-func searchPart(value string, stop rune) (bool, string, int) {
+func searchPart(value string, stop byte) (bool, string, int) {
 	var result strings.Builder
-	runes := []rune(value)
 	i := 0
-	for i < len(runes) {
-		if runes[i] == '\\' && i+1 < len(runes) && runes[i+1] == stop {
-			result.WriteRune(stop)
+	for i < len(value) {
+		if value[i] == '\\' && i+1 < len(value) && value[i+1] == stop {
+			result.WriteByte(stop)
 			i += 2
 			continue
 		}
-		if runes[i] == stop {
+		if value[i] == stop {
 			return true, result.String(), i
 		}
-		result.WriteRune(runes[i])
+		result.WriteByte(value[i])
 		i++
 	}
 	return false, result.String(), i
@@ -92,7 +91,7 @@ func ToStringSlice(value string, options Options) ([]string, error) {
 	} else {
 		index := 0
 		for index < len(value) {
-			char := rune(value[index])
+			char := value[index]
 			if isQuote, quote := isQuote(char); isQuote {
 				quoteFound, part, consumed := searchPart(value[index+1:], quote)
 
