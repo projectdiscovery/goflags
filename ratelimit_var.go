@@ -3,12 +3,12 @@ package goflags
 import (
 	"errors"
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
 	"unicode"
 
-	stringsutil "github.com/projectdiscovery/utils/strings"
 	timeutil "github.com/projectdiscovery/utils/time"
 )
 
@@ -89,11 +89,18 @@ func (rateLimitMap RateLimitMap) String() string {
 	defaultBuilder := &strings.Builder{}
 	defaultBuilder.WriteString("{")
 
-	var items string
-	for k, v := range rateLimitMap.kv {
-		items += fmt.Sprintf("\"%s\":\"%d/%s\",", k, v.MaxCount, v.Duration.String())
+	keys := make([]string, 0, len(rateLimitMap.kv))
+	for key := range rateLimitMap.kv {
+		keys = append(keys, key)
 	}
-	defaultBuilder.WriteString(stringsutil.TrimSuffixAny(items, ",", ":"))
+	sort.Strings(keys)
+	for i, key := range keys {
+		if i > 0 {
+			defaultBuilder.WriteByte(',')
+		}
+		value := rateLimitMap.kv[key]
+		fmt.Fprintf(defaultBuilder, "\"%s\":\"%d/%s\"", key, value.MaxCount, value.Duration.String())
+	}
 	defaultBuilder.WriteString("}")
 	return defaultBuilder.String()
 }

@@ -5,10 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 
 	fileutil "github.com/projectdiscovery/utils/file"
-	stringsutil "github.com/projectdiscovery/utils/strings"
 )
 
 const (
@@ -24,12 +24,21 @@ func (runtimeMap RuntimeMap) String() string {
 	defaultBuilder := &strings.Builder{}
 	defaultBuilder.WriteString("{")
 
-	var items string
-	for k, v := range runtimeMap.kv {
-		items += fmt.Sprintf("\"%s\"=\"%s\"%s", k, v, kvSep)
+	keys := make([]string, 0, len(runtimeMap.kv))
+	for key := range runtimeMap.kv {
+		keys = append(keys, key)
 	}
-	defaultBuilder.WriteString(stringsutil.TrimSuffixAny(items, ",", "="))
+
+	sort.Strings(keys)
+	for i, key := range keys {
+		if i > 0 {
+			defaultBuilder.WriteString(kvSep)
+		}
+		fmt.Fprintf(defaultBuilder, "\"%s\"=\"%s\"", key, runtimeMap.kv[key])
+	}
+
 	defaultBuilder.WriteString("}")
+
 	return defaultBuilder.String()
 }
 

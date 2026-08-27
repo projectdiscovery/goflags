@@ -25,3 +25,43 @@ func TestFlagSet_SetConfigFilePath(t *testing.T) {
 	assert.Equal(t, configFilePath, gotFilePath)
 	tearDown(t.Name())
 }
+
+func TestFlagSet_SetConfigFilePaths(t *testing.T) {
+	paths := []string{"/etc/tool/config.yaml", "/tmp/user/config.yaml"}
+	flagSet := NewFlagSet()
+	flagSet.SetConfigFilePaths(paths...)
+	paths[1] = "/tmp/changed.yaml"
+
+	gotFilePath, err := flagSet.GetConfigFilePath()
+	assert.NoError(t, err)
+	assert.Equal(t, "/tmp/user/config.yaml", gotFilePath)
+}
+
+func TestFlagSet_SetConfigFilePathsIgnoresEmptyPaths(t *testing.T) {
+	flagSet := NewFlagSet()
+	defaultPath, err := flagSet.GetConfigFilePath()
+	assert.NoError(t, err)
+
+	flagSet.SetConfigFilePaths("", "/etc/tool/config.yaml", "", "/tmp/user/config.yaml", "")
+	gotFilePath, err := flagSet.GetConfigFilePath()
+	assert.NoError(t, err)
+	assert.Equal(t, "/tmp/user/config.yaml", gotFilePath)
+
+	flagSet.SetConfigFilePaths("")
+	gotFilePath, err = flagSet.GetConfigFilePath()
+	assert.NoError(t, err)
+	assert.Equal(t, defaultPath, gotFilePath)
+}
+
+func TestFlagSet_SetConfigFilePathEmptyRestoresDefault(t *testing.T) {
+	flagSet := NewFlagSet()
+	wantFilePath, err := flagSet.GetConfigFilePath()
+	assert.NoError(t, err)
+
+	flagSet.SetConfigFilePath("/tmp/config.yaml")
+	flagSet.SetConfigFilePath("")
+
+	gotFilePath, err := flagSet.GetConfigFilePath()
+	assert.NoError(t, err)
+	assert.Equal(t, wantFilePath, gotFilePath)
+}
