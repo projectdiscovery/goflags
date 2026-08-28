@@ -13,10 +13,15 @@ type CommonFlags struct {
 	// When this duration is reached, an interrupt signal is sent to trigger graceful termination.
 	// Example values: "1h", "30m", "1h30m", "2h45m30s"
 	MaxTime time.Duration
+
+	handlersStarted bool
+	maxTimeTimer    *time.Timer
+	activeMaxTime   time.Duration
 }
 
 // AddCommonFlags registers common flags to the flagset and returns a CommonFlags struct.
-// The handlers are automatically started after Parse() is called.
+// The handlers are automatically started when Parse returns and refreshed
+// after a successful MergeConfigFile call.
 //
 // Usage:
 //
@@ -36,17 +41,36 @@ func (flagSet *FlagSet) AddCommonFlags() *CommonFlags {
 
 // startCommonFlagsHandlers is called by Parse() to start handlers.
 func (flagSet *FlagSet) startCommonFlagsHandlers() {
-	if flagSet.commonFlags != nil {
-		flagSet.commonFlags.startMaxTimeHandler()
+	if flagSet.commonFlags == nil {
+		return
 	}
+
+	flagSet.commonFlags.handlersStarted = true
+	flagSet.refreshCommonFlagsHandlers()
 }
 
-// startMaxTimeHandler starts the max time handler if MaxTime is set.
+func (flagSet *FlagSet) refreshCommonFlagsHandlers() {
+	if flagSet.commonFlags == nil || !flagSet.commonFlags.handlersStarted {
+		return
+	}
+
+	flagSet.commonFlags.startMaxTimeHandler()
+}
+
+// startMaxTimeHandler replaces the active timer when MaxTime changes.
 func (cf *CommonFlags) startMaxTimeHandler() {
-	if cf.MaxTime > 0 {
-		go func() {
-			<-time.After(cf.MaxTime)
-			process.SendInterrupt()
-		}()
+	maxTime := cf.MaxTime
+	if cf.maxTimeTimer != nil && cf.activeMaxTime == maxTime {
+		return
+	}
+
+	if cf.maxTimeTimer != nil {
+		cf.maxTimeTimer.Stop()
+		cf.maxTimeTimer = nil
+	}
+	cf.activeMaxTime = maxTime
+
+	if maxTime > 0 {
+		cf.maxTimeTimer = time.AfterFunc(maxTime, process.SendInterrupt)
 	}
 }

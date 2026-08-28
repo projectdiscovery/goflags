@@ -112,6 +112,7 @@ func (flagSet *FlagSet) Parse(args ...string) error {
 	}
 
 	_ = flagSet.CommandLine.Parse(toParse)
+	defer flagSet.startCommonFlagsHandlers()
 
 	configFilePaths := flagSet.getConfigFilePaths()
 	configFilePath := configFilePaths[len(configFilePaths)-1]
@@ -150,9 +151,6 @@ func (flagSet *FlagSet) Parse(args ...string) error {
 	if err := flagSet.mergeConfigFiles(configFilePathsToLoad); err != nil {
 		return err
 	}
-
-	// Start common flags handlers if AddCommonFlags was called
-	flagSet.startCommonFlagsHandlers()
 
 	return nil
 }

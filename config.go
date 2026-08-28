@@ -18,9 +18,16 @@ import (
 )
 
 // MergeConfigFile reads one higher-priority config layer.
-// Explicit command-line flags keep precedence over the file.
+// Explicit command-line flags keep precedence over the file. Active common
+// flag handlers are refreshed after a successful merge.
 func (flagSet *FlagSet) MergeConfigFile(file string) error {
-	return flagSet.mergeConfigFiles([]string{file})
+	if err := flagSet.mergeConfigFiles([]string{file}); err != nil {
+		return err
+	}
+
+	flagSet.refreshCommonFlagsHandlers()
+
+	return nil
 }
 
 // generateDefaultConfig generates a default YAML config file for a flagset.
