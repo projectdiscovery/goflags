@@ -289,7 +289,7 @@ func TestConfigFileCascadeReturnsLowerPrioritySourceError(t *testing.T) {
 	flagSet.SetConfigFilePaths(systemConfig, userConfig)
 
 	err := flagSet.Parse("")
-	require.ErrorContains(t, err, systemConfig)
+	require.ErrorContains(t, err, fmt.Sprintf("%q", systemConfig))
 }
 
 func TestMergeConfigFileReturnsMissingFileError(t *testing.T) {
@@ -735,8 +735,8 @@ func TestConfigFileCascadeReturnsValueError(t *testing.T) {
 
 	err := flagSet.Parse("")
 	require.ErrorContains(t, err, `set config option "count"`)
-	require.ErrorContains(t, err, higherConfig)
-	require.NotContains(t, err.Error(), lowerConfig)
+	require.ErrorContains(t, err, fmt.Sprintf("%q", higherConfig))
+	require.NotContains(t, err.Error(), fmt.Sprintf("%q", lowerConfig))
 }
 
 func BenchmarkMergeConfigAssignments(b *testing.B) {
