@@ -92,6 +92,12 @@ The last path is the primary user configuration file. `Parse` creates this file
 if it does not exist. Missing lower-priority files are skipped, but other file
 errors are returned. Earlier files are always read-only.
 
+`Parse` and `MergeConfigFile` return configuration errors (malformed YAML,
+unsupported or invalid values). A failure while applying cascaded files rolls
+back every assignment from that apply, including values from lower-priority
+files, so compiled defaults remain. Sequential `MergeConfigFile` calls roll
+back only the failed file.
+
 Built-in collection types replace the complete collection instead of merging
 items. Custom `flag.Value` implementations keep their own `Set` behavior.
 Callback flags are CLI-only, so configuration files cannot run them.
