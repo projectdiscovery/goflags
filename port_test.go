@@ -60,3 +60,14 @@ func TestPortType(t *testing.T) {
 		require.ElementsMatch(t, port.AsPorts(), []int{443, 53}, "could not get correct ports")
 	})
 }
+
+func BenchmarkPortStringFull(b *testing.B) {
+	port := &Port{}
+	require.NoError(b, port.Set("full"))
+
+	for b.Loop() {
+		if result := port.String(); len(result) == 0 {
+			b.Fatal("Port.String returned an empty result")
+		}
+	}
+}

@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -29,6 +30,32 @@ func TestSuccessfulCallback(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, want, got.String())
 	tearDown(t.Name())
+}
+
+func TestConfigFileDoesNotExecuteCallback(t *testing.T) {
+
+	configFile := filepath.Join(t.TempDir(), "config.yaml")
+	writeTestConfig(t, configFile, "update: true\n")
+	called := false
+
+	flagSet := NewFlagSet()
+	flagSet.CallbackVar(func() { called = true }, "update", "update tool")
+	flagSet.SetConfigFilePath(configFile)
+
+	assert.NoError(t, flagSet.Parse(""))
+	assert.False(t, called)
+}
+
+func TestMergeConfigFileDoesNotExecuteCallback(t *testing.T) {
+	configFile := filepath.Join(t.TempDir(), "config.yaml")
+	writeTestConfig(t, configFile, "update: true\n")
+	called := false
+
+	flagSet := NewFlagSet()
+	flagSet.CallbackVar(func() { called = true }, "update", "update tool")
+
+	assert.NoError(t, flagSet.MergeConfigFile(configFile))
+	assert.False(t, called)
 }
 
 func TestFailCallback(t *testing.T) {

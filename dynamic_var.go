@@ -11,6 +11,7 @@ import (
 type dynamicFlag struct {
 	field        interface{}
 	defaultValue interface{}
+	initialValue interface{}
 	name         string
 }
 
@@ -108,6 +109,7 @@ func (flagSet *FlagSet) DynamicVarP(field interface{}, long, short string, defau
 
 	var dynamicFlag dynamicFlag
 	dynamicFlag.field = field
+	dynamicFlag.initialValue = dynamicFieldSnapshot(field)
 	dynamicFlag.name = long
 	if defaultValue != nil {
 		dynamicFlag.defaultValue = defaultValue
@@ -126,4 +128,16 @@ func (flagSet *FlagSet) DynamicVarP(field interface{}, long, short string, defau
 	flagSet.CommandLine.Var(&dynamicFlag, long, usage)
 	flagSet.flagKeys.Set(long, flagData)
 	return flagData
+}
+
+func dynamicFieldSnapshot(field interface{}) interface{} {
+	value := reflect.ValueOf(field).Elem()
+	if value.Kind() != reflect.Slice || value.IsNil() {
+		return value.Interface()
+	}
+
+	clonedValue := reflect.MakeSlice(value.Type(), value.Len(), value.Len())
+	reflect.Copy(clonedValue, value)
+
+	return clonedValue.Interface()
 }
