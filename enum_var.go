@@ -2,7 +2,8 @@ package goflags
 
 import (
 	"fmt"
-	"sort"
+	"maps"
+	"slices"
 	"strings"
 )
 
@@ -18,12 +19,7 @@ func (a AllowdTypes) String() string {
 	// Sorted, because ranging over the map gives a different order from one
 	// call to the next, which makes both the help output and the "allowed
 	// values are" error text unstable.
-	keys := make([]string, 0, len(a))
-	for k := range a {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-	return strings.Join(keys, ", ")
+	return strings.Join(slices.Sorted(maps.Keys(a)), ", ")
 }
 
 type EnumVar struct {
