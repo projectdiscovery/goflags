@@ -50,3 +50,27 @@ func TestFailEnumVar(t *testing.T) {
 	t.Fatalf("process ran with err %v, want exit error", err)
 	tearDown(t.Name())
 }
+
+func TestAllowedTypesStringIsSorted(t *testing.T) {
+	allowed := AllowdTypes{"yaml": Type1, "json": Type2, "csv": Nil, "sarif": Type1, "xml": Type2}
+
+	assert.Equal(t, "csv, json, sarif, xml, yaml", allowed.String())
+
+	// Ranging over a map gives a different order between calls, so the help
+	// text and the "allowed values are" error used to change shape run to run.
+	for i := 0; i < 20; i++ {
+		assert.Equal(t, "csv, json, sarif, xml, yaml", allowed.String())
+	}
+}
+
+func TestEnumVarErrorListsAllowedValuesInOrder(t *testing.T) {
+	var value string
+	enum := &EnumVar{
+		allowedTypes: AllowdTypes{"yaml": Type1, "json": Type2, "csv": Nil},
+		value:        &value,
+	}
+
+	err := enum.Set("toml")
+
+	assert.EqualError(t, err, "allowed values are csv, json, yaml")
+}
