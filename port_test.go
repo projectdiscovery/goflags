@@ -62,6 +62,39 @@ func TestPortType(t *testing.T) {
 	})
 }
 
+func TestPortSetIgnoresOutOfRangePorts(t *testing.T) {
+	t.Run("single", func(t *testing.T) {
+		port := &Port{}
+		_ = port.Set("80,65536,70000")
+		require.ElementsMatch(t, port.AsPorts(), []int{80}, "could not get correct ports")
+	})
+	t.Run("colon", func(t *testing.T) {
+		port := &Port{}
+		_ = port.Set("TCP:443,TCP:70000,UDP:0")
+		require.ElementsMatch(t, port.AsPorts(), []int{443}, "could not get correct ports")
+	})
+	t.Run("range starting at zero", func(t *testing.T) {
+		port := &Port{}
+		_ = port.Set("0-3")
+		require.ElementsMatch(t, port.AsPorts(), []int{1, 2, 3}, "could not get correct ports")
+	})
+	t.Run("range past 65535", func(t *testing.T) {
+		port := &Port{}
+		_ = port.Set("65533-65540")
+		require.ElementsMatch(t, port.AsPorts(), []int{65533, 65534, 65535}, "could not get correct ports")
+	})
+	t.Run("range far past 65535", func(t *testing.T) {
+		port := &Port{}
+		_ = port.Set("1-655350")
+		require.Len(t, port.AsPorts(), 65535, "could not get correct ports")
+	})
+	t.Run("range outside 1-65535", func(t *testing.T) {
+		port := &Port{}
+		_ = port.Set("70000-70010")
+		require.Empty(t, port.AsPorts(), "could not get correct ports")
+	})
+}
+
 func TestPortSetMixedKeywordLists(t *testing.T) {
 	t.Run("top-100,31337", func(t *testing.T) {
 		keywordOnly := &Port{}
