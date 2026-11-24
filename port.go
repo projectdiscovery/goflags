@@ -104,6 +104,9 @@ func (port *Port) AsPorts() []int {
 func (port *Port) normalizePortValue(portsMap map[int]struct{}, value string) {
 	values := strings.Split(value, ",")
 	for _, item := range values {
+		// Allow spaces around list items, as in "80, 443".
+		item = strings.TrimSpace(item)
+
 		// Handle top-xxx/*/- cases as individual list items.
 		switch item {
 		case "full", "-", "*":

@@ -105,6 +105,40 @@ func TestPortSetMixedKeywordLists(t *testing.T) {
 	})
 }
 
+func TestPortSetListWithSpaces(t *testing.T) {
+	t.Run("numbers", func(t *testing.T) {
+		port := &Port{}
+		_ = port.Set("80, 443 , 8080")
+		require.ElementsMatch(t, port.AsPorts(), []int{80, 443, 8080}, "could not get correct ports")
+	})
+	t.Run("services and colon", func(t *testing.T) {
+		port := &Port{}
+		_ = port.Set("ftp, TCP:443")
+		require.ElementsMatch(t, port.AsPorts(), []int{21, 443}, "could not get correct ports")
+	})
+	t.Run("range and keyword", func(t *testing.T) {
+		port := &Port{}
+		_ = port.Set(" top-100, 21-25 ")
+		require.Len(t, port.AsPorts(), 101, "could not get correct ports")
+		require.Contains(t, port.AsPorts(), 24)
+	})
+}
+
+func TestPortListWithSpacesViaFlagSet(t *testing.T) {
+	flagSet := NewFlagSet()
+	var p Port
+	flagSet.PortVarP(&p, "ports", "p", nil, "ports to scan")
+
+	os.Args = []string{
+		os.Args[0],
+		"-p", "80, 443",
+	}
+	err := flagSet.Parse()
+	require.Nil(t, err)
+	require.ElementsMatch(t, p.AsPorts(), []int{80, 443}, "could not get correct ports")
+	tearDown(t.Name())
+}
+
 func TestPortKeywordInListViaFlagSet(t *testing.T) {
 	flagSet := NewFlagSet()
 	var p Port
